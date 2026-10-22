@@ -116,8 +116,17 @@ export async function runImport(opts = {}) {
     s.next = buffers[e.name].length; // hervat precies waar we waren
   }
   let queue = list.filter((e) => !state.entities[e.name].done).map((e) => e.name);
+  let estimated = false;
+  const knownFiles = withFiles && !refreshFiles ? Object.keys(loadArchiveIndex(ARCHIVE, DATA).files).length : 0;
 
   while (queue.length) {
+    // Zodra van elke tabel het aantal records bekend is: schatting van wat er nog komt.
+    if (!estimated && list.every((e) => state.entities[e.name].done || state.entities[e.name].apiCount != null)) {
+      estimated = true;
+      const pages = list.reduce((a, e) => { const s = state.entities[e.name]; return a + (s.done ? 0 : Math.ceil(Math.max(0, (s.apiCount ?? 0) - s.next) / PAGE)); }, 0);
+      const files = withFiles ? Math.max(0, (state.entities.file?.apiCount ?? 0) - knownFiles) : 0;
+      log(`ℹ  Schatting: nog ± ${pages + files} API-calls (${pages} voor tabellen, ${files} voor nieuwe bijlagen) → ${duration(pages + files, client.rateLimit)}.`);
+    }
     const chunk = queue.slice(0, BATCH);
     const calls = chunk.map((name) => {
       const s = state.entities[name];
@@ -174,7 +183,7 @@ export async function runImport(opts = {}) {
     let reused = 0;
     for (const id of fileIds) if (!state.files[id]?.ok && reusable(index.files[id])) { state.files[id] = index.files[id]; reused++; }
     const todo = [...fileIds].filter((id) => !state.files[id]?.ok);
-    log(`▶  Bijlagen: ${fileIds.size} gevonden, ${reused} al in het archief, ${todo.length} op te halen`);
+    log(`▶  Bijlagen: ${fileIds.size} gevonden, ${reused} al in het archief, ${todo.length} op te halen${todo.length ? ` (${duration(todo.length, client.rateLimit)})` : ''}`);
     for (let i = 0; i < todo.length; i += 4) {
       const ids = todo.slice(i, i + 4);
       const res = await client.batch(ids.map((id) => ({ method: 'file.getContent', params: [id] })));
@@ -260,6 +269,16 @@ export async function runImport(opts = {}) {
   log(`✔  Snapshot gepubliceerd als data/current (${state.status}).`);
   await build({ log, config: cfg });
   return { stagingDir: current, report, published: true };
+}
+
+// Geschatte duur voor `calls` API-calls. Gripp telt elke call mee voor de uurlimiet (standaard 1000);
+// binnen het tegoed van dit uur gaat het snel (± 4 calls per seconde), daarboven telt elk uur.
+export function duration(calls, rateLimit) {
+  const limit = rateLimit?.limit || 1000;
+  const left = Math.max(0, (rateLimit?.remaining ?? limit) - 5);
+  if (calls <= left) return `± ${Math.max(1, Math.ceil(calls / 4 / 60))} min`;
+  const hours = Math.ceil((calls - left) / limit);
+  return `± ${hours} uur door de limiet van ${limit} calls per uur`;
 }
 
 // Index van alles wat al in archive/ staat, over runs heen (archive/index.json). Bestaat hij nog niet

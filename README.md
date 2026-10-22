@@ -55,7 +55,7 @@ Start-Windows.cmd backup
 - Haalt alle tabellen op (250 records per call, in batches), daarna de bijlagen en factuur-PDF's, en desgewenst de documenten (zie hieronder).
 - **Bijlagen worden hergebruikt.** Wat al in `archive/` staat (zelfde bestand, zelfde grootte) wordt niet opnieuw opgehaald; de administratie daarvan staat in `archive/index.json`. Definitieve factuur-PDF's worden ook hergebruikt, concepten altijd opnieuw opgehaald. Een tweede back-up is daardoor veel sneller dan de eerste en kost veel minder API-quotum. Alles opnieuw ophalen: `--refresh-files`.
 - Houdt rekening met de Gripp-limiet van **1000 requests per uur**. Is die op, dan wacht de import zelf tot het volgende uur. Je mag ook stoppen (Ctrl+C) en later verdergaan met **Onderbroken back-up hervatten** in het menu, of `Start-Windows.cmd resume`.
-- Een eerste back-up kan enkele uren duren, afhankelijk van de grootte van je account.
+- Een eerste back-up kan enkele uren duren, afhankelijk van de grootte van je account. Zodra de aantallen bekend zijn, toont de import een schatting (bijvoorbeeld "nog ± 2600 API-calls → ± 2 uur door de limiet van 1000 calls per uur"). Vooral bijlagen kosten tijd: elke bijlage is één call.
 - Na afloop staat een **volledigheidsrapport** in `data/current/report.md` in de back-upmap: aantallen per tabel, gebroken verwijzingen, financiële controletotalen en bekende beperkingen.
 - Is Gripp in onderhoud of heeft het een storing (de API stuurt dan door naar een statuspagina zoals status.exact.com), dan wacht de import een paar keer en stopt daarna met een duidelijke melding. Hervat later.
 - **Een mislukte import overschrijft nooit de bestaande back-up.** Mislukt een tabel (bijvoorbeeld door onvoldoende API-rechten), dan blijft de nieuwe snapshot in `data/staging-…` staan en blijft `data/current` ongewijzigd. Pas de API-rol aan en hervat met `--resume`, of publiceer toch met `--accept-partial`.
@@ -123,7 +123,7 @@ De back-upmap staat op zichzelf: je kunt hem verplaatsen of kopiëren en daar op
 ```
 <back-upmap>/
 ├─ Archief openen.html   startpagina
-├─ viewer/               het archief (inclusief data/data.js)
+├─ viewer/               het archief; de gegevens staan in viewer/data/ (in delen van ± 8 MB)
 ├─ data/current/         laatste snapshot: ruwe API-JSON (bron van waarheid) + rapport
 ├─ data/previous/        vorige snapshot
 ├─ data/history/         oudere snapshots
@@ -168,6 +168,10 @@ Werk de tool bij met `git pull` of een nieuwe ZIP. Profielen en back-ups blijven
 - De wijzigingsgeschiedenis ("Bekijk geschiedenis"), interacties, publicaties en batches zitten niet in de API.
 - Instellingen (identiteiten, BTW-tarieven, condities) zijn alleen als verwijzing aanwezig.
 
+## Grote accounts
+
+De viewer laadt alle gegevens in de browser. Getest met een nep-account van 138.600 records (196 MB, ruim 10× een gemiddeld mkb-account): laden ± 5 seconden, ± 270 MB geheugen, lijsten openen direct en zoeken over alles kost ± 0,3 seconde. Dit werkt ook bij openen via dubbelklik. Zelf testen: `node test/scale.mjs <map> 100`.
+
 ## Ontwikkelen
 
 ```
@@ -186,7 +190,8 @@ importer/build.mjs      snapshot → viewer in de back-upmap
 lib/config.mjs          profielen en paden
 lib/gripp-client.mjs    API-client (weigert schrijfacties)
 lib/schema.mjs          entiteiten en verwijzingen
-viewer/                 statische viewer (geen externe bronnen)
+viewer/                 statische viewer (geen externe bronnen); loader.js laadt de data in delen
+test/scale.mjs          schaaltest voor de viewer (nep-back-up van N× de testdata)
 serve.mjs               optionele lokale webserver (alleen GET)
 test/                   tests tegen een nep-API
 ```

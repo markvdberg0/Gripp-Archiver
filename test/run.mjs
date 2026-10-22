@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startMock } from './mock-gripp.mjs';
 import { GrippClient, ReadOnlyViolation } from '../lib/gripp-client.mjs';
-import { runImport } from '../importer/import.mjs';
+import { runImport, duration } from '../importer/import.mjs';
 import { resolveConfig, parseEnvFile, TOOL_ROOT, slugify, writeProfile } from '../lib/config.mjs';
 import { checkAccess, describeError, formatCheck } from '../lib/check.mjs';
 import { cronLine, macPlist, parseTime, windowsScript } from '../lib/schedule.mjs';
@@ -70,7 +70,9 @@ await t('factuur-PDF\'s via directpdfurl', () => assert.equal(report.invoicePdfs
 await t('offerte-PDF\'s via directpdfurl', () => { const d = JSON.parse(fs.readFileSync(path.join(TMP, 'data/current/documents.json'), 'utf8')); assert.equal(Object.values(d.offer).filter((x) => x.ok).length, 30); });
 await t('opdracht-PDF\'s via online weergave (link gevonden)', () => { const d = JSON.parse(fs.readFileSync(path.join(TMP, 'data/current/documents.json'), 'utf8')); const ok = Object.values(d.project).filter((x) => x.ok); assert.equal(ok.length, 12); assert.equal(ok[0].via, 'weergave'); assert.ok(fs.existsSync(path.join(TMP, 'archive', ok[0].path))); });
 await t('viewer-data gebouwd', () => { const js = fs.readFileSync(path.join(TMP, 'viewer/data/data.js'), 'utf8'); assert.ok(js.startsWith('window.GRIPP_DATA=')); assert.ok(!js.includes('</script')); assert.ok(js.includes('"accountName":"Testbedrijf B.V."')); });
-await t('back-upmap staat op zichzelf (viewer + startpagina)', () => { for (const f of ['viewer/index.html', 'viewer/app.js', 'viewer/style.css', 'Archief openen.html']) assert.ok(fs.existsSync(path.join(TMP, f)), f); });
+await t('back-upmap staat op zichzelf (viewer + startpagina)', () => { for (const f of ['viewer/index.html', 'viewer/loader.js', 'viewer/app.js', 'viewer/style.css', 'Archief openen.html']) assert.ok(fs.existsSync(path.join(TMP, f)), f); });
+await t('viewer-data in delen: elk record precies één keer, met juiste aantallen', () => { const w = {}; new Function('window', fs.readFileSync(path.join(TMP, 'viewer/data/data.js'), 'utf8'))(w); const D = w.GRIPP_DATA; assert.ok(D.parts.length > 0); for (const p of D.parts) new Function('window', fs.readFileSync(path.join(TMP, 'viewer/data', p.file), 'utf8'))(w); assert.equal(D.entities.company.length, 620); assert.equal(D.entities.invoice.length, 71); assert.equal(D.parts.reduce((a, p) => a + p.rows, 0), Object.values(D.entities).reduce((a, r) => a + r.length, 0)); for (const f of fs.readdirSync(path.join(TMP, 'viewer/data'))) assert.ok(f === 'data.js' || D.parts.some((p) => p.file === f), `oud bestand ${f}`); });
+await t('geschatte duur', () => { assert.match(duration(100, null), /min/); assert.equal(duration(2600, { limit: 1000, remaining: 922 }), '± 2 uur door de limiet van 1000 calls per uur'); });
 await t('tool-map blijft schoon (geen data in de code)', () => { for (const d of ['data', 'archive', path.join('viewer', 'data')]) assert.ok(!fs.existsSync(path.join(SRC, d)), d); });
 
 console.log('Mislukte import overschrijft bestaande snapshot niet');
