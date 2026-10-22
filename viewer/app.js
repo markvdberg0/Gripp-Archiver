@@ -52,8 +52,7 @@
 
   if (!D) {
     app.innerHTML = `<div class="wide"><div class="card"><div class="card-h">Nog geen archiefdata</div><div class="card-b">
-      <p>Het bestand <code>viewer/data/data.js</code> ontbreekt. Draai eerst de import:</p>
-      <pre class="raw">npm run import</pre><p class="muted">Zie README.md voor de stappen.</p></div></div></div>`;
+      <p>Het bestand <code>viewer/data/data.js</code> ontbreekt. Maak eerst een back-up: start <code>Start-Windows.cmd</code> (macOS: <code>Start-Mac.command</code>) en kies <b>Back-up maken</b>.</p><p class="muted">Zie README.md voor de stappen.</p></div></div></div>`;
     return;
   }
 
@@ -638,7 +637,7 @@
   function pageExports() {
     const m = D.manual || [];
     return pageHead('Handmatige exports', 'Bestanden in archive/manual/ (bijv. factuurarchief-ZIP\'s, XAF-auditfiles, offerte-PDF\'s)') + `<div class="wide">
-      <div class="notice">Plaats aanvullende exports uit Gripp in de map <code>archive/manual/</code> en draai <code>npm run build</code>; ze verschijnen dan hier.</div>
+      <div class="notice">Plaats aanvullende exports uit Gripp in de map <code>archive/manual/</code> en kies in het menu <b>Viewer opnieuw bouwen</b>; ze verschijnen dan hier.</div>
       <div class="card"><div class="card-b flush">${m.length ? `<table class="list"><tbody>${m.map((f) => `<tr><td>📦 <a href="../${encodeURI(f.path)}" target="_blank" rel="noopener">${esc(f.path.replace('archive/manual/', ''))}</a></td><td class="num">${(f.size / 1048576).toFixed(2)} MB</td></tr>`).join('')}</tbody></table>` : '<div class="empty">Nog geen handmatige exports.</div>'}</div></div></div>`;
   }
 

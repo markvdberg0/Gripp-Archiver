@@ -24,7 +24,7 @@ function listFiles(dir, base = dir) {
 export async function build({ log = console.log, config, dataDir, preview = false } = {}) {
   const cfg = config ?? loadConfig();
   dataDir ??= path.join(cfg.dataDir, 'current');
-  if (!fs.existsSync(dataDir)) throw new Error(`Geen snapshot in ${dataDir}. Draai eerst: npm run import`);
+  if (!fs.existsSync(dataDir)) throw new Error(`Geen snapshot in ${dataDir}. Maak eerst een back-up.`);
   const rawDir = path.join(dataDir, 'raw');
   const entities = {};
   for (const f of fs.readdirSync(rawDir).filter((f) => f.endsWith('.json') && !f.includes('.partial'))) {

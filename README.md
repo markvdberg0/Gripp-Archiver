@@ -6,13 +6,27 @@ Maak een volledige, **alleen-lezende** back-up van je Gripp-account, met een arc
 
 - Haalt alle ±50 Gripp-tabellen op die de API levert, plus bijlagen, factuur-PDF's en PDF's van offertes, opdrachten en inkoopopdrachten.
 - Kan technisch niets wijzigen in Gripp. De API-client weigert elke methode behalve `*.get` en `file.getContent`, en de tests controleren dat.
-- Gebruikt alleen Node.js, zonder extra pakketten (`npm install` is niet nodig).
+- Niets te installeren: de startscripts halen zo nodig zelf een portable Node.js op.
 - Ondersteunt meerdere Gripp-accounts naast elkaar (profielen).
 
 ## Benodigd
 
-- **Node.js 18 of nieuwer** (https://nodejs.org, LTS). Controleer met `node --version`.
+- Windows 10/11, macOS of Linux (x64 of ARM).
 - Een **API-sleutel** uit Gripp (Instellingen › API keys). Advies: maak een nieuwe sleutel met een **API-rol die alleen mag lezen**.
+
+Node.js hoeft niet geïnstalleerd te zijn. Staat er al Node 18.17 of nieuwer op de computer, dan wordt die gebruikt. Zo niet, dan downloaden de startscripts eenmalig de officiële Node.js-versie uit [tools/node.lock](tools/node.lock) van nodejs.org naar de map `.runtime/`. De download wordt gecontroleerd met het SHA-256-controlegetal dat in de repository vastligt; klopt dat niet, dan wordt hij verwijderd. Er is geen installatie en er zijn geen beheerdersrechten nodig. Wil je altijd de portable versie gebruiken, zet dan `GRIPP_PORTABLE_NODE=1`.
+
+## Starten
+
+| Systeem | Hoe |
+|---|---|
+| Windows | Dubbelklik op `Start-Windows.cmd` |
+| macOS | Dubbelklik op `Start-Mac.command` (de eerste keer eventueel: rechtsklik › Open, omdat het script niet is ondertekend) |
+| Linux | `./start.sh` in een terminal |
+
+Zonder opdracht krijg je een menu: back-up maken, hervatten, archief openen, viewer opnieuw bouwen en zelftest. Je kunt ook direct een opdracht meegeven, bijvoorbeeld `Start-Windows.cmd backup --profile=mijnbedrijf` of `./start.sh open`. Alle opdrachten: `Start-Windows.cmd help`.
+
+Heb je zelf Node.js, dan werkt `node cli.mjs <opdracht>` ook.
 
 ## Instellen
 
@@ -25,21 +39,20 @@ Maak een volledige, **alleen-lezende** back-up van je Gripp-account, met een arc
    ```
    Op macOS/Linux: `mkdir -p profiles/mijnbedrijf && cp config.env.example profiles/mijnbedrijf/config.env`.
 3. Vul in `config.env` minimaal `GRIPP_API_TOKEN` en `GRIPP_ACCOUNT_NAME` in. Kies bij voorkeur ook een `GRIPP_BACKUP_DIR` buiten de toolmap (een korte map, bijvoorbeeld `D:\Back-ups\Gripp`). Zonder die instelling komt de back-up in `backups/<profiel>/`.
-4. Optioneel, om te controleren dat alles werkt (praat alleen met een nep-API, raakt Gripp nooit):
-   ```powershell
-   npm test
-   ```
+4. Optioneel, om te controleren dat alles werkt: kies in het menu **Zelftest** (of `Start-Windows.cmd test`). Die praat alleen met een nep-API en raakt Gripp nooit.
 
 Profielen en back-ups staan nooit in git (zie `.gitignore`). Je token en je gegevens worden dus niet meegestuurd als je de tool bijwerkt of deelt.
 
 ## Back-up maken
 
+Kies in het menu **Back-up maken**, of:
+
 ```powershell
-npm run import
+Start-Windows.cmd backup
 ```
 
 - Haalt alle tabellen op (250 records per call, in batches), daarna alle bijlagen, factuur-PDF's en documenten.
-- Houdt rekening met de Gripp-limiet van **1000 requests per uur**. Is die op, dan wacht de import zelf tot het volgende uur. Je mag ook stoppen (Ctrl+C) en later verdergaan met `npm run import -- --resume`.
+- Houdt rekening met de Gripp-limiet van **1000 requests per uur**. Is die op, dan wacht de import zelf tot het volgende uur. Je mag ook stoppen (Ctrl+C) en later verdergaan met **Onderbroken back-up hervatten** in het menu, of `Start-Windows.cmd resume`.
 - Een eerste back-up kan enkele uren duren, afhankelijk van de grootte van je account.
 - Na afloop staat een **volledigheidsrapport** in `data/current/report.md` in de back-upmap: aantallen per tabel, gebroken verwijzingen, financiële controletotalen en bekende beperkingen.
 - **Een mislukte import overschrijft nooit de bestaande back-up.** Mislukt een tabel (bijvoorbeeld door onvoldoende API-rechten), dan blijft de nieuwe snapshot in `data/staging-…` staan en blijft `data/current` ongewijzigd. Pas de API-rol aan en hervat met `--resume`, of publiceer toch met `--accept-partial`.
@@ -54,14 +67,14 @@ Opties:
 | `--accept-partial` | Publiceer ook als sommige tabellen mislukten |
 | `--only=company,offer` | Alleen deze tabellen (om te testen) |
 
-Opties geef je na `--` mee, bijvoorbeeld `npm run import -- --profile=mijnbedrijf --resume`.
+Opties zet je achter de opdracht, bijvoorbeeld `Start-Windows.cmd backup --profile=mijnbedrijf --no-files` (macOS/Linux: `./start.sh backup …`).
 
 ## Archief openen
 
 - **Zonder server:** dubbelklik in de back-upmap op `Archief openen.html` (of `viewer/index.html`).
 - **Met lokale server:**
   ```powershell
-  npm run serve       # http://localhost:4173
+  Start-Windows.cmd serve       # http://localhost:4173
   ```
   De server accepteert alleen GET-verzoeken, luistert alleen op je eigen computer en serveert uitsluitend `viewer/` en `archive/`.
 
@@ -86,14 +99,14 @@ De back-upmap staat op zichzelf: je kunt hem verplaatsen of kopiëren en daar op
 
 ## Documenten van offertes, opdrachten en inkoopopdrachten
 
-Gripp levert bij elk record een document-link mee (`directpdfurl` bij offertes, `viewonlineurl` bij opdrachten en inkoopopdrachten). De import haalt daarmee de PDF's op, zonder het API-quotum te belasten. Los opnieuw draaien kan met `npm run documents`.
+Gripp levert bij elk record een document-link mee (`directpdfurl` bij offertes, `viewonlineurl` bij opdrachten en inkoopopdrachten). De import haalt daarmee de PDF's op, zonder het API-quotum te belasten. Los opnieuw draaien kan met de opdracht `documents`.
 
 - **Alleen downloaden:** er wordt niets geaccepteerd, ondertekend of verzonden.
 - **Let op:** de online weergave is dezelfde pagina die je klant of leverancier ziet. Gripp kan het openen ervan als "bekeken" in de timeline zetten.
 
 ## Handmatige exports
 
-Sommige gegevens levert de API niet. Leg exports uit Gripp in `archive/manual/` in de back-upmap en draai daarna `npm run build`.
+Sommige gegevens levert de API niet. Leg exports uit Gripp in `archive/manual/` in de back-upmap en kies daarna **Viewer opnieuw bouwen** in het menu (opdracht `build`).
 
 - `archive/manual/verkoopfacturen/Factuur_<nummer>.pdf` wordt automatisch aan de juiste factuur gekoppeld.
 - Aanbevolen: de **XAF-auditfile** per boekjaar (Boekhouding › Belasting & BTW › Auditfile downloaden).
@@ -104,7 +117,7 @@ Maak per account een map in `profiles/`. Elk profiel heeft een eigen token, naam
 
 ## Bijwerken
 
-Werk de tool bij met `git pull` of een nieuwe ZIP. Profielen en back-ups blijven daarbij onaangeroerd. Bouw daarna de viewer opnieuw met `npm run build`, zodat de back-upmap de nieuwe viewer krijgt.
+Werk de tool bij met `git pull` of een nieuwe ZIP. Profielen en back-ups blijven daarbij onaangeroerd. Kies daarna **Viewer opnieuw bouwen**, zodat de back-upmap de nieuwe viewer krijgt.
 
 ## Veiligheid en privacy
 
@@ -121,6 +134,11 @@ Werk de tool bij met `git pull` of een nieuwe ZIP. Profielen en back-ups blijven
 ## Ontwikkelen
 
 ```
+Start-Windows.cmd       starter Windows (→ tools/start.ps1)
+Start-Mac.command       starter macOS (→ start.sh)
+start.sh                starter macOS/Linux
+tools/node.lock         vastgezette Node.js-versie + SHA-256 (bijwerken: node tools/update-node.mjs)
+cli.mjs                 menu en opdrachten
 importer/import.mjs     import (alleen-lezen, hervatbaar)
 importer/documents.mjs  PDF's van offertes, opdrachten, inkoopopdrachten
 importer/build.mjs      snapshot → viewer in de back-upmap
@@ -132,7 +150,7 @@ serve.mjs               optionele lokale webserver (alleen GET)
 test/                   tests tegen een nep-API
 ```
 
-`npm test` draait de volledige import tegen een nep-API in een tijdelijke map.
+`node cli.mjs test` (of `npm test`) draait de volledige import tegen een nep-API in een tijdelijke map.
 
 ## Licentie
 

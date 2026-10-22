@@ -295,5 +295,5 @@ function reportMarkdown(r) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  runImport().catch((e) => { log(`✖  Import afgebroken: ${e.message}`); log(`   Hervatten: npm run import -- --resume${profileArg(activeConfig)}`); process.exit(1); });
+  runImport().catch((e) => { log(`✖  Import afgebroken: ${e.message}`); log(`   Hervatten: kies 'Onderbroken back-up hervatten' in het menu (opdracht: resume${profileArg(activeConfig)}).`); process.exit(1); });
 }
