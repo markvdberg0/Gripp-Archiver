@@ -65,7 +65,7 @@ Opties:
 | `--resume` | Ga verder met de laatste onderbroken import |
 | `--no-files` | Sla bijlagen en PDF's over |
 | `--accept-partial` | Publiceer ook als sommige tabellen mislukten |
-| `--only=company,offer` | Alleen deze tabellen (om te testen) |
+| `--only=company,offer` | Alleen deze tabellen, om te testen. Wordt **nooit** gepubliceerd: het resultaat komt in `data/only-…` en `data/current` blijft ongewijzigd |
 
 Opties zet je achter de opdracht, bijvoorbeeld `Start-Windows.cmd backup --profile=mijnbedrijf --no-files` (macOS/Linux: `./start.sh backup …`).
 

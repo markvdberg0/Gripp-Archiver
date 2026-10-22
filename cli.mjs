@@ -33,6 +33,7 @@ Opties:
   --profile=<naam>   kies het profiel (nodig als er meerdere zijn)
   --no-files         (backup) geen bijlagen en PDF's
   --accept-partial   (backup) ook publiceren als sommige tabellen mislukten
+  --only=a,b         (backup) alleen deze tabellen, als test; wordt nooit gepubliceerd
 
 Meer uitleg: README.md`;
 

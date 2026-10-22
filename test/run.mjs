@@ -70,6 +70,17 @@ await t('na resume: invoice alsnog opgehaald en gepubliceerd', () => { assert.eq
 await t('na resume: geslaagde tabellen niet opnieuw opgehaald', () => assert.ok(mockR.stats.calls <= 3, `calls=${mockR.stats.calls}`));
 mockR.server.close();
 
+console.log('Import met --only vervangt nooit data/current');
+const mockO = await startMock({ failEvery: 0 });
+const snap = (d) => fs.readFileSync(path.join(TMP, 'data', d, 'state.json'), 'utf8');
+const [curBefore, prevBefore] = [snap('current'), snap('previous')];
+const resO = await runImport({ config, url: mockO.url, resume: false, noFiles: true, only: 'company', acceptPartial: true });
+await t('niet gepubliceerd, ook niet met --accept-partial', () => assert.equal(resO.published, false));
+await t('data/current en data/previous ongewijzigd', () => { assert.equal(snap('current'), curBefore); assert.equal(snap('previous'), prevBefore); assert.equal(raw('invoice').length, 71); });
+await t('resultaat in eigen map only-* (niet hervatbaar)', () => { assert.match(path.basename(resO.stagingDir), /^only-/); assert.equal(JSON.parse(fs.readFileSync(path.join(resO.stagingDir, 'raw', 'company.json'), 'utf8')).length, 620); });
+await t('onbekende tabelnaam geweigerd', () => assert.rejects(() => runImport({ config, url: mockO.url, resume: false, noFiles: true, only: 'bestaatniet' }), /onbekende/));
+mockO.server.close();
+
 console.log('Hervatten na onderbreking');
 const mock3 = await startMock({ failEvery: 0 });
 // simuleer: staging met half-afgeronde state
@@ -80,7 +91,8 @@ fs.writeFileSync(path.join(st, 'state.json'), JSON.stringify({ batch: 'staging-9
 for (const d of fs.readdirSync(path.join(TMP, 'data')).filter((d) => d.startsWith('staging-') && d !== 'staging-9999-resume')) fs.rmSync(path.join(TMP, 'data', d), { recursive: true });
 const callsBefore = mock3.stats.calls;
 const res3 = await runImport({ config, url: mock3.url, resume: true, noFiles: true, only: 'company' });
-await t('hervat vanaf checkpoint (geen eerste pagina opnieuw)', () => { assert.equal(res3.published, true); assert.equal(raw('company').length, 620); assert.ok(mock3.stats.calls - callsBefore <= 3); });
+await t('hervat de onderbroken staging, niet de only-testrun', () => assert.equal(path.basename(res3.stagingDir), 'staging-9999-resume'));
+await t('hervat vanaf checkpoint (geen eerste pagina opnieuw)', () => { assert.equal(res3.published, false); assert.equal(JSON.parse(fs.readFileSync(path.join(st, 'raw', 'company.json'), 'utf8')).length, 620); assert.ok(mock3.stats.calls - callsBefore <= 3); });
 
 // terugzetten naar volledige dataset voor viewer-test
 await runImport({ config, url: mock.url, resume: false });

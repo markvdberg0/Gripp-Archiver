@@ -5,7 +5,7 @@
 //   npm run import -- --resume     verder met de laatste onderbroken import
 //   npm run import -- --no-files   geen bijlagen downloaden
 //   npm run import -- --accept-partial   ook publiceren als sommige entiteiten faalden
-//   npm run import -- --only=company,offer   alleen deze entiteiten (test)
+//   npm run import -- --only=company,offer   alleen deze entiteiten (test; wordt nooit gepubliceerd)
 //   npm run import -- --profile=naam    kies het profiel (nodig als er meerdere zijn)
 //
 // Structuur, binnen de back-upmap van het profiel (zie lib/config.mjs):
@@ -62,6 +62,10 @@ export async function runImport(opts = {}) {
   const withFiles = !(opts.noFiles ?? args.has('--no-files'));
   const acceptPartial = opts.acceptPartial ?? args.has('--accept-partial');
   const only = (opts.only ?? kv.only)?.split(',').map((s) => s.trim()).filter(Boolean);
+  if (only) {
+    const unknown = only.filter((n) => !ENTITIES.some((e) => e.name === n));
+    if (!only.length || unknown.length) throw new Error(`--only: onbekende of lege tabelnaam (${unknown.join(', ') || 'leeg'}). Geldig: ${ENTITIES.map((e) => e.name).join(', ')}`);
+  }
 
   await fsp.mkdir(DATA, { recursive: true });
   let stagingDir;
@@ -70,7 +74,8 @@ export async function runImport(opts = {}) {
     if (!st) throw new Error('Geen onderbroken import gevonden om te hervatten.');
     stagingDir = path.join(DATA, st);
   } else {
-    stagingDir = path.join(DATA, `staging-${new Date().toISOString().replace(/[:.]/g, '-')}`);
+    // --only krijgt een eigen naam, zodat --resume en build --preview zo'n testrun niet oppakken.
+    stagingDir = path.join(DATA, `${only ? 'only' : 'staging'}-${new Date().toISOString().replace(/[:.]/g, '-')}`);
   }
   await fsp.mkdir(path.join(stagingDir, 'raw'), { recursive: true });
   logFile = path.join(stagingDir, 'import.log');
@@ -207,9 +212,15 @@ export async function runImport(opts = {}) {
   state.finishedAt = ts();
   state.status = failed.length ? 'partial' : 'complete';
   await saveState();
+  // Een import van een deel van de tabellen is nooit een volledige back-up: nooit publiceren,
+  // ook niet met --accept-partial, anders vervangt een test de echte snapshot.
+  if (only) {
+    log(`ℹ  Import met --only: snapshot NIET gepubliceerd; data/current blijft ongewijzigd. Resultaat: ${stagingDir}`);
+    return { stagingDir, report, published: false };
+  }
   if (failed.length && !acceptPartial) {
     log(`⚠  ${failed.length} entiteit(en) mislukt (${failed.join(', ')}). Snapshot NIET gepubliceerd; huidige versie blijft ongewijzigd.`);
-    log(`   Controleer het rapport en draai eventueel opnieuw met --accept-partial.`);
+    log(`   Controleer het rapport en draai eventueel opnieuw met --resume of --accept-partial.`);
     return { stagingDir, report, published: false };
   }
   const current = path.join(DATA, 'current');
