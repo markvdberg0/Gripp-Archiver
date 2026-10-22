@@ -1,0 +1,40 @@
+# Release maken: zet de versie in package.json, commit, en push een tag "v<versie>" (bijv. v0.5.0).
+# Deze workflow draait dan de tests en zet gripp-backup-<versie>.zip bij een nieuwe GitHub-release.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Versie controleren
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME komt niet overeen met package.json ($VERSION)." >&2
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - run: node cli.mjs test
+
+      - name: Zip maken
+        # git archive bewaart de uitvoerrechten van start.sh en Start-Mac.command;
+        # .github en andere ontwikkelbestanden vallen weg via export-ignore in .gitattributes.
+        run: git archive --format=zip --prefix="gripp-backup-$VERSION/" -o "gripp-backup-$VERSION.zip" HEAD
+
+      - name: Release publiceren
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" "gripp-backup-$VERSION.zip" --title "Gripp Back-up $VERSION" --generate-notes

@@ -1,0 +1,76 @@
+# Tests tegen de nep-API (raakt Gripp nooit), op Windows, macOS en Linux.
+# Daarnaast de startscripts met de portable Node uit tools/node.lock (download + controlegetal).
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Tests · ${{ matrix.os }} · Node ${{ matrix.node }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: ['24']
+        include:
+          - os: ubuntu-latest
+            node: '18'   # laagste ondersteunde versie (package.json: >=18.17)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: node cli.mjs test
+
+  starters:
+    name: Startscript · ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    env:
+      GRIPP_PORTABLE_NODE: '1'   # altijd de portable Node gebruiken, ook al staat er Node op de runner
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: start.sh (macOS/Linux)
+        if: runner.os != 'Windows'
+        run: |
+          sh ./start.sh help
+          sh ./start.sh test
+          test -x start.sh && test -x Start-Mac.command
+          ls -d .runtime/node-v*
+
+      - name: Start-Mac.command
+        if: runner.os == 'macOS'
+        run: sh ./Start-Mac.command help
+
+      - name: Start-Windows.cmd → tools/start.ps1
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          call Start-Windows.cmd help || exit /b 1
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\start.ps1 test || exit /b 1
+          dir .runtime
+
+      - name: Vervalste download wordt geweigerd
+        shell: bash
+        run: |
+          rm -rf .runtime
+          sed -i.bak -E 's/^[0-9a-f]{8}/00000000/' tools/node.lock
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/start.ps1 help && exit 1
+          else
+            sh ./start.sh help && exit 1
+          fi
+          test -z "$(ls .runtime 2>/dev/null | grep -v '^uitpakken' )" && echo "Download geweigerd en verwijderd."

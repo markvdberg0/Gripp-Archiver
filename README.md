@@ -4,10 +4,14 @@ Maak een volledige, **alleen-lezende** back-up van je Gripp-account, met een arc
 
 > **Onofficieel.** Dit project is niet gemaakt door, en niet verbonden aan, Gripp B.V. Het gebruikt alleen de openbare Gripp API.
 
-- Haalt alle ±50 Gripp-tabellen op die de API levert, plus bijlagen, factuur-PDF's en PDF's van offertes, opdrachten en inkoopopdrachten.
+- Haalt alle ±50 Gripp-tabellen op die de API levert, plus bijlagen, factuur-PDF's en (optioneel) PDF's van offertes, opdrachten en inkoopopdrachten.
 - Kan technisch niets wijzigen in Gripp. De API-client weigert elke methode behalve `*.get` en `file.getContent`, en de tests controleren dat.
 - Niets te installeren: de startscripts halen zo nodig zelf een portable Node.js op.
-- Ondersteunt meerdere Gripp-accounts naast elkaar (profielen).
+- Ondersteunt meerdere Gripp-accounts naast elkaar (profielen), en een automatische dagelijkse back-up.
+
+## Downloaden
+
+Download de nieuwste versie bij **[Releases](../../releases/latest)** (`gripp-backup-<versie>.zip`) en pak hem uit. Heb je git, dan kan ook `git clone`; bijwerken gaat dan met `git pull`. Wat er per versie veranderd is, staat in [CHANGELOG.md](CHANGELOG.md).
 
 ## Benodigd
 
@@ -30,7 +34,7 @@ Heb je zelf Node.js, dan werkt `node cli.mjs <opdracht>` ook.
 
 ## Instellen
 
-1. Download deze repository (`git clone`, of **Code › Download ZIP** en uitpakken).
+1. Download en pak uit (zie [Downloaden](#downloaden)).
 2. Maak in Gripp een API-sleutel: Instellingen › API › maak een **API-rol die alleen mag lezen** (vink alle onderdelen aan) en een nieuwe sleutel met die rol.
 3. Start de tool (zie hierboven). De eerste keer start de **setup** vanzelf; later kies je **Nieuw account instellen** in het menu, of `Start-Windows.cmd setup`. De setup:
    - vraagt het API-token (je ziet alleen sterretjes; plakken mag);
@@ -158,6 +162,8 @@ Werk de tool bij met `git pull` of een nieuwe ZIP. Profielen en back-ups blijven
 
 ## Veiligheid en privacy
 
+Zie ook [SECURITY.md](SECURITY.md): wat de tool met je token en gegevens doet, met welke hosts hij verbinding maakt, en hoe je een kwetsbaarheid meldt.
+
 - Gebruik een API-sleutel met een rol die alleen mag lezen, en deel `config.env` met niemand.
 - Een back-up bevat alle bedrijfs- en persoonsgegevens uit Gripp, ook bijzondere persoonsgegevens van medewerkers (BSN, bankrekening, privéadres). Die worden in de viewer niet bij Gegevens getoond en zijn gemaskeerd bij Brongegevens, maar staan wel in de ruwe bestanden. Bewaar de back-upmap daarom net zo zorgvuldig als Gripp zelf.
 - Zet een back-upmap nooit in een git-repository of een openbaar gedeelde map.
@@ -197,6 +203,12 @@ test/                   tests tegen een nep-API
 ```
 
 `node cli.mjs test` (of `npm test`) draait de volledige import tegen een nep-API in een tijdelijke map.
+
+Op GitHub draaien bij elke push de tests op Windows, macOS en Linux (Node 24, en Node 18 als laagste versie), plus de startscripts met de portable Node, inclusief een controle dat een vervalste download wordt geweigerd ([.github/workflows/test.yml](.github/workflows/test.yml)).
+
+**Release maken:** zet de nieuwe versie in `package.json` en in [CHANGELOG.md](CHANGELOG.md), commit, en push een tag `v<versie>` (bijvoorbeeld `git tag v0.5.0 && git push --tags`). De release-workflow draait de tests en zet `gripp-backup-<versie>.zip` bij een GitHub-release.
+
+**Node.js bijwerken:** `node tools/update-node.mjs` legt de nieuwste LTS-versie en de controlegetallen vast in `tools/node.lock`.
 
 ## Licentie
 

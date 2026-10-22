@@ -1,6 +1,6 @@
 {
   "name": "gripp-backup",
-  "version": "0.2.0",
+  "version": "0.5.0",
   "private": true,
   "description": "Onofficiële, alleen-lezende back-up van een Gripp-account, met een offline viewer",
   "license": "MIT",

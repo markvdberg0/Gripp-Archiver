@@ -18,13 +18,14 @@ import { ask, closePrompts, confirm } from './lib/prompt.mjs';
 import { runSetup } from './lib/setup.mjs';
 import { disableSchedule, enableSchedule, scheduleStatus } from './lib/schedule.mjs';
 
+const VERSION = JSON.parse(fs.readFileSync(path.join(TOOL_ROOT, 'package.json'), 'utf8')).version;
 const STATUS_FILE = 'laatste-back-up.json';
 const RESULT = { 0: 'gelukt', 2: 'klaar, maar niet gepubliceerd (zie rapport)' };
 const profileOf = (args) => args.find((a) => a.startsWith('--profile='))?.slice(10);
 
 const SCRIPTS = { backup: 'importer/import.mjs', build: 'importer/build.mjs', documents: 'importer/documents.mjs', serve: 'serve.mjs', test: 'test/run.mjs' };
 
-const HELP = `Gripp Back-up — onofficiële, alleen-lezende back-up van een Gripp-account
+const HELP = () => `Gripp Back-up ${VERSION} — onofficiële, alleen-lezende back-up van een Gripp-account
 
 Gebruik:  Start-Windows.cmd <opdracht> [opties]     (macOS/Linux: ./start.sh <opdracht> [opties])
 
@@ -175,7 +176,7 @@ async function chooseProfile() {
 }
 
 async function menu() {
-  console.log('\nGripp Back-up\n');
+  console.log(`\nGripp Back-up ${VERSION}\n`);
   let profile = await chooseProfile();
   while (profile) {
     const cfg = loadConfig({ profile });
@@ -206,7 +207,7 @@ async function menu() {
 const [cmd = '', ...rest] = process.argv.slice(2);
 let code;
 try {
-  if (cmd === '') code = process.stdin.isTTY ? await menu() : (console.log(HELP), 0);
+  if (cmd === '') code = process.stdin.isTTY ? await menu() : (console.log(HELP()), 0);
   else if (cmd === 'setup') code = (await setupAndOfferBackup()) ? 0 : 1;
   else if (cmd === 'check') code = await runCheck();
   else if (cmd === 'backup') code = runBackup(rest);
@@ -214,8 +215,8 @@ try {
   else if (cmd === 'schedule') code = scheduleCommand(rest);
   else if (cmd === 'open') code = openArchive();
   else if (SCRIPTS[cmd]) code = run(SCRIPTS[cmd], rest);
-  else if (['help', '--help', '-h'].includes(cmd)) { console.log(HELP); code = 0; }
-  else { console.error(`Onbekende opdracht "${cmd}".\n`); console.log(HELP); code = 1; }
+  else if (['help', '--help', '-h'].includes(cmd)) { console.log(HELP()); code = 0; }
+  else { console.error(`Onbekende opdracht "${cmd}".\n`); console.log(HELP()); code = 1; }
 } catch (e) {
   console.error(`✖  ${e.message}`);
   code = 1;
