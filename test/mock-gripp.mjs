@@ -56,7 +56,7 @@ export function makeData() {
 
 const PDF = Buffer.from('%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<<>>\n%%EOF');
 
-export function startMock({ port = 0, failEvery = 7, rateLimit = 1000, deny = [] } = {}) {
+export function startMock({ port = 0, failEvery = 7, rateLimit = 1000, deny = [], maintenance = false } = {}) {
   const data = makeData();
   const stats = { requests: 0, calls: 0, writeAttempts: 0, methods: new Set() };
   let remaining = rateLimit;
@@ -65,6 +65,8 @@ export function startMock({ port = 0, failEvery = 7, rateLimit = 1000, deny = []
     if (req.method === 'GET' && req.url.startsWith('/view/')) { res.writeHead(200, { 'Content-Type': 'text/html' }); return res.end(`<html><body><h1>Opdrachtbevestiging</h1><a href="/pdf/doc-${req.url.slice(6)}?type=pdf&amp;download=1">Download PDF</a></body></html>`); }
     if (req.method === 'GET' && req.url.startsWith('/pdf/')) { res.writeHead(200, { 'Content-Type': 'application/pdf' }); return res.end(PDF); }
     if (req.method !== 'POST') { res.writeHead(405); return res.end(); }
+    // Zoals Gripp tijdens een storing: doorsturen naar de statuspagina van Exact
+    if (maintenance) { stats.redirects = (stats.redirects ?? 0) + 1; res.writeHead(301, { Location: 'https://status.example.test:443/' }); return res.end(); }
     if (req.headers.authorization !== 'Bearer test-token') { res.writeHead(401); return res.end('unauthorized'); }
     stats.requests++;
     if (failEvery && stats.requests % failEvery === 0) { res.writeHead(503); return res.end('busy'); }
@@ -75,7 +77,7 @@ export function startMock({ port = 0, failEvery = 7, rateLimit = 1000, deny = []
       stats.methods.add(method);
       const [ent, m] = method.split('.');
       if (m !== 'get' && method !== 'file.getContent') { stats.writeAttempts++; return { id, error: 'write not allowed in mock' }; }
-      if (deny.includes(ent)) return { id, error: 'Insufficient rights for this entity' };
+      if (deny.includes(ent)) return { id, error: `Insufficient rights. Please check you API-role settings to see if you have "read" privileges for entity "nl-${ent}".` };   // zoals Gripp
       if (method === 'file.getContent') return { id, result: { name: `bijlage-${params[0]}.pdf`, content: PDF.toString('base64') } };
       const rows = (data[ent] ?? []).map((r) => JSON.parse(JSON.stringify(r).replaceAll('__BASE__', base)));
       const { firstresult = 0, maxresults = 250 } = params?.[1]?.paging ?? {};

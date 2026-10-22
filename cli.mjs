@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // Eén ingang voor alle onderdelen. De startscripts (Start-Windows.cmd, Start-Mac.command, start.sh) roepen dit aan.
-//   node cli.mjs                        menu
+//   node cli.mjs                        menu (zonder profiel: eerst de setup)
+//   node cli.mjs setup                  nieuw account instellen (wizard)
+//   node cli.mjs check [--profile=x]    verbinding en leesrechten controleren
 //   node cli.mjs backup [opties]        back-up maken (opties: zie README, bv. --profile=naam --no-files)
 //   node cli.mjs resume [opties]        onderbroken back-up hervatten
 //   node cli.mjs open                   archief openen in de browser
@@ -9,8 +11,10 @@
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import readline from 'node:readline/promises';
 import { TOOL_ROOT, listProfiles, loadConfig } from './lib/config.mjs';
+import { checkAccess, formatCheck } from './lib/check.mjs';
+import { ask, closePrompts, confirm } from './lib/prompt.mjs';
+import { runSetup } from './lib/setup.mjs';
 
 const SCRIPTS = { backup: 'importer/import.mjs', build: 'importer/build.mjs', documents: 'importer/documents.mjs', serve: 'serve.mjs', test: 'test/run.mjs' };
 
@@ -20,6 +24,8 @@ Gebruik:  Start-Windows.cmd <opdracht> [opties]     (macOS/Linux: ./start.sh <op
 
 Opdrachten:
   (geen)      menu
+  setup       nieuw account instellen (API-token, controle, back-upmap)
+  check       verbinding en leesrechten per tabel controleren
   backup      back-up maken
   resume      onderbroken back-up hervatten
   open        archief openen in de browser
@@ -37,12 +43,6 @@ Opties:
 
 Meer uitleg: README.md`;
 
-const NO_PROFILE = `Er is nog geen profiel. Maak er een aan:
-  1. Maak een map in profiles/, bijvoorbeeld profiles/mijnbedrijf
-  2. Kopieer config.env.example naar profiles/mijnbedrijf/config.env
-  3. Vul daarin GRIPP_API_TOKEN en GRIPP_ACCOUNT_NAME in
-Zie README.md voor de stappen.`;
-
 function run(script, args) {
   const r = spawnSync(process.execPath, [path.join(TOOL_ROOT, script), ...args], { stdio: 'inherit' });
   return r.status ?? 1;
@@ -58,48 +58,74 @@ function openArchive(profile) {
   return 0;
 }
 
+// 0 = alles leesbaar, 2 = verbinding goed maar niet alle tabellen leesbaar
+async function runCheck(profile) {
+  const cfg = loadConfig({ profile });
+  if (!cfg.token) throw new Error(`Profiel "${cfg.profile}" heeft geen GRIPP_API_TOKEN. Draai de setup opnieuw.`);
+  console.log(`Verbinding en leesrechten controleren voor ${cfg.accountName}…\n`);
+  const result = await checkAccess({ token: cfg.token, url: cfg.apiUrl });
+  console.log(formatCheck(result));
+  return result.results.every((r) => r.ok) ? 0 : 2;
+}
+
+// Setup draaien en aanbieden om meteen een eerste back-up te maken.
+async function setupAndOfferBackup() {
+  const profile = await runSetup();
+  if (profile && (await confirm('\nNu de eerste back-up maken? Dit kan enkele uren duren; onderbreken en later hervatten mag.', false))) {
+    run(SCRIPTS.backup, [`--profile=${profile}`]);
+  }
+  return profile;
+}
+
+async function chooseProfile() {
+  const profiles = listProfiles();
+  if (!profiles.length) {
+    console.log('Er is nog geen Gripp-account ingesteld.');
+    return setupAndOfferBackup();
+  }
+  if (profiles.length === 1) return profiles[0];
+  profiles.forEach((p, i) => console.log(`  ${i + 1}. ${loadConfig({ profile: p }).accountName} (${p})`));
+  console.log(`  ${profiles.length + 1}. Nieuw account instellen`);
+  console.log('  0. Afsluiten');
+  const i = Number(await ask('\nWelk account?')) - 1;
+  if (i === profiles.length) return setupAndOfferBackup();
+  return profiles[i] ?? null;
+}
+
 async function menu() {
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  const ask = async (q) => (await rl.question(q)).trim();
-  try {
-    console.log('\nGripp Back-up\n');
-    const profiles = listProfiles();
-    if (!profiles.length) { console.log(NO_PROFILE); await ask('\nDruk op Enter om af te sluiten.'); return 0; }
-    let profile = profiles[0];
-    if (profiles.length > 1) {
-      profiles.forEach((p, i) => console.log(`  ${i + 1}. ${p}`));
-      const i = Number(await ask('\nWelk profiel? ')) - 1;
-      if (!profiles[i]) return 0;
-      profile = profiles[i];
-    }
+  console.log('\nGripp Back-up\n');
+  let profile = await chooseProfile();
+  while (profile) {
     const cfg = loadConfig({ profile });
     const p = [`--profile=${profile}`];
     const items = [
       ['Back-up maken', () => run(SCRIPTS.backup, p)],
       ['Onderbroken back-up hervatten', () => run(SCRIPTS.backup, ['--resume', ...p])],
       ['Archief openen', () => openArchive(profile)],
+      ['Verbinding en rechten controleren', () => runCheck(profile)],
       ['Viewer opnieuw bouwen', () => run(SCRIPTS.build, p)],
+      ['Nieuw account instellen', async () => { const np = await runSetup(); if (np) profile = np; return np ? 0 : 1; }],
       ['Zelftest (nep-API, raakt Gripp nooit)', () => run(SCRIPTS.test, [])],
     ];
-    for (;;) {
-      console.log(`\nAccount:    ${cfg.accountName} (profiel ${profile})\nBack-upmap: ${cfg.backupDir}\n`);
-      items.forEach(([label], i) => console.log(`  ${i + 1}. ${label}`));
-      console.log('  0. Afsluiten');
-      const item = items[Number(await ask('\nKeuze: ')) - 1];
-      if (!item) return 0;
-      console.log('');
-      const code = item[1]();
-      console.log(code ? '\n✖  Afgerond met fouten (zie hierboven).' : '\n✔  Klaar.');
-    }
-  } finally {
-    rl.close();
+    console.log(`\nAccount:    ${cfg.accountName} (profiel ${profile})\nBack-upmap: ${cfg.backupDir}\n`);
+    items.forEach(([label], i) => console.log(`  ${i + 1}. ${label}`));
+    console.log('  0. Afsluiten');
+    const item = items[Number(await ask('\nKeuze:')) - 1];
+    if (!item) return 0;
+    console.log('');
+    let code;
+    try { code = await item[1](); } catch (e) { console.error(`✖  ${e.message}`); code = 1; }
+    console.log(code ? '\n✖  Afgerond met fouten of waarschuwingen (zie hierboven).' : '\n✔  Klaar.');
   }
+  return 0;
 }
 
 const [cmd = '', ...rest] = process.argv.slice(2);
 let code;
 try {
   if (cmd === '') code = process.stdin.isTTY ? await menu() : (console.log(HELP), 0);
+  else if (cmd === 'setup') code = (await setupAndOfferBackup()) ? 0 : 1;
+  else if (cmd === 'check') code = await runCheck();
   else if (cmd === 'resume') code = run(SCRIPTS.backup, ['--resume', ...rest]);
   else if (cmd === 'open') code = openArchive();
   else if (SCRIPTS[cmd]) code = run(SCRIPTS[cmd], rest);
@@ -108,5 +134,7 @@ try {
 } catch (e) {
   console.error(`✖  ${e.message}`);
   code = 1;
+} finally {
+  closePrompts();
 }
 process.exitCode = code;

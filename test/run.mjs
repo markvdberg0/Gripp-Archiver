@@ -8,7 +8,8 @@ import { fileURLToPath } from 'node:url';
 import { startMock } from './mock-gripp.mjs';
 import { GrippClient, ReadOnlyViolation } from '../lib/gripp-client.mjs';
 import { runImport } from '../importer/import.mjs';
-import { resolveConfig, parseEnvFile, TOOL_ROOT } from '../lib/config.mjs';
+import { resolveConfig, parseEnvFile, TOOL_ROOT, slugify, writeProfile } from '../lib/config.mjs';
+import { checkAccess, describeError, formatCheck } from '../lib/check.mjs';
 
 const SRC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'gripp-backup-test-'));
@@ -23,6 +24,23 @@ console.log('Configuratie');
 await t('standaard back-upmap is backups/<profiel> in de tool', () => { const c = resolveConfig({ profile: 'acme' }); assert.equal(c.backupDir, path.join(TOOL_ROOT, 'backups', 'acme')); assert.equal(c.accountName, 'acme'); assert.equal(c.viewerDir, path.join(c.backupDir, 'viewer')); });
 await t('zonder profiel en zonder back-upmap: duidelijke fout', () => assert.throws(() => resolveConfig({}), /Geen profiel/));
 await t('config.env lezen (BOM, quotes, commentaar, CRLF)', () => { const f = path.join(TMP, 'c.env'); fs.writeFileSync(f, '﻿# commentaar\r\nGRIPP_API_TOKEN="abc"\r\nGRIPP_ACCOUNT_NAME=Mijn Bedrijf B.V.\r\n'); assert.deepEqual(parseEnvFile(f), { GRIPP_API_TOKEN: 'abc', GRIPP_ACCOUNT_NAME: 'Mijn Bedrijf B.V.' }); fs.rmSync(f); });
+
+await t('profielnaam uit bedrijfsnaam', () => { assert.equal(slugify('Bakker & Zn. B.V.'), 'bakker-zn-bv'); assert.equal(slugify('Café Ünïcode'), 'cafe-unicode'); assert.equal(slugify('!!!'), 'gripp'); });
+await t('profiel wegschrijven en teruglezen', () => { const dir = path.join(TMP, 'profiles'); const f = writeProfile({ profile: 'acme', token: 'tok', accountName: 'Acme B.V.', backupDir: 'D:\\Back-ups\\Acme B.V' }, dir); assert.deepEqual(parseEnvFile(f), { GRIPP_API_TOKEN: 'tok', GRIPP_ACCOUNT_NAME: 'Acme B.V.', GRIPP_BACKUP_DIR: 'D:\\Back-ups\\Acme B.V' }); assert.throws(() => writeProfile({ profile: '../x', token: 't' }, dir)); assert.throws(() => writeProfile({ profile: 'x', token: 't\nGRIPP_API_URL=evil' }, dir), /regeleinden/); fs.rmSync(dir, { recursive: true }); });
+
+console.log('Verbinding en rechtencheck');
+{
+  const m = await startMock({ failEvery: 0, deny: ['invoice', 'department'] });
+  const r = await checkAccess({ token: 'test-token', url: m.url });
+  const by = Object.fromEntries(r.results.map((x) => [x.name, x]));
+  await t('alle tabellen gecontroleerd, alleen met .get', () => { assert.equal(r.results.length, 50); assert.equal(m.stats.writeAttempts, 0); for (const x of m.stats.methods) assert.match(x, /\.get$/); });
+  await t('geweigerde tabellen herkend, met Gripp-naam', () => { assert.equal(by.invoice.ok, false); assert.equal(by.invoice.rights, true); assert.equal(by.invoice.grippName, 'nl-invoice'); assert.equal(by.company.ok, true); assert.equal(by.company.count, 620); });
+  await t('melding noemt wat je in Gripp moet aanvinken', () => { const s = formatCheck(r); assert.match(s, /48 van 50 tabellen leesbaar/); assert.match(s, /nl-department/); });
+  await t('ongeldig token: duidelijke fout', () => assert.rejects(() => checkAccess({ token: 'fout', url: m.url }), /401/));
+  await t('storing (doorverwijzing naar statuspagina): duidelijke fout, verwijzing niet gevolgd', async () => { const mm = await startMock({ maintenance: true }); await assert.rejects(() => checkAccess({ token: 'test-token', url: mm.url }), /tijdelijk niet beschikbaar: doorgestuurd naar status.example.test/); assert.equal(mm.stats.requests, 0); mm.server.close(); });
+  await t('foutmelding van echte Gripp wordt herkend', () => assert.deepEqual(describeError('Insufficient rights. Please check you API-role settings to see if you have "read" privileges for entity "afdeling".'), { rights: true, grippName: 'afdeling' }));
+  m.server.close();
+}
 
 console.log('Read-only garantie');
 await t('client weigert create/update/delete', async () => {

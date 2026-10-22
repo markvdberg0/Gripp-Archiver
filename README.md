@@ -24,22 +24,23 @@ Node.js hoeft niet geïnstalleerd te zijn. Staat er al Node 18.17 of nieuwer op 
 | macOS | Dubbelklik op `Start-Mac.command` (de eerste keer eventueel: rechtsklik › Open, omdat het script niet is ondertekend) |
 | Linux | `./start.sh` in een terminal |
 
-Zonder opdracht krijg je een menu: back-up maken, hervatten, archief openen, viewer opnieuw bouwen en zelftest. Je kunt ook direct een opdracht meegeven, bijvoorbeeld `Start-Windows.cmd backup --profile=mijnbedrijf` of `./start.sh open`. Alle opdrachten: `Start-Windows.cmd help`.
+Zonder opdracht krijg je een menu: back-up maken, hervatten, archief openen, verbinding en rechten controleren, viewer opnieuw bouwen, nieuw account instellen en zelftest. De eerste keer start automatisch de setup. Je kunt ook direct een opdracht meegeven, bijvoorbeeld `Start-Windows.cmd backup --profile=mijnbedrijf` of `./start.sh open`. Alle opdrachten: `Start-Windows.cmd help`.
 
 Heb je zelf Node.js, dan werkt `node cli.mjs <opdracht>` ook.
 
 ## Instellen
 
 1. Download deze repository (`git clone`, of **Code › Download ZIP** en uitpakken).
-2. Maak een profiel voor je account. Kies een korte naam, bijvoorbeeld `mijnbedrijf`:
-   ```powershell
-   mkdir profiles\mijnbedrijf
-   copy config.env.example profiles\mijnbedrijf\config.env
-   notepad profiles\mijnbedrijf\config.env
-   ```
-   Op macOS/Linux: `mkdir -p profiles/mijnbedrijf && cp config.env.example profiles/mijnbedrijf/config.env`.
-3. Vul in `config.env` minimaal `GRIPP_API_TOKEN` en `GRIPP_ACCOUNT_NAME` in. Kies bij voorkeur ook een `GRIPP_BACKUP_DIR` buiten de toolmap (een korte map, bijvoorbeeld `D:\Back-ups\Gripp`). Zonder die instelling komt de back-up in `backups/<profiel>/`.
-4. Optioneel, om te controleren dat alles werkt: kies in het menu **Zelftest** (of `Start-Windows.cmd test`). Die praat alleen met een nep-API en raakt Gripp nooit.
+2. Maak in Gripp een API-sleutel: Instellingen › API › maak een **API-rol die alleen mag lezen** (vink alle onderdelen aan) en een nieuwe sleutel met die rol.
+3. Start de tool (zie hierboven). De eerste keer start de **setup** vanzelf; later kies je **Nieuw account instellen** in het menu, of `Start-Windows.cmd setup`. De setup:
+   - vraagt het API-token (je ziet alleen sterretjes; plakken mag);
+   - controleert meteen de verbinding en de leesrechten per tabel. Ontbreken er rechten, dan noemt hij precies wat je in de API-rol moet aanvinken (bijvoorbeeld "afdeling" of "staffelprijs");
+   - vraagt de bedrijfsnaam, een korte profielnaam en de map voor de back-up (standaard `Gripp-backup\<profiel>` in je gebruikersmap). Kies bij voorkeur een korte map buiten de toolmap, bijvoorbeeld `D:\Back-ups\Gripp`;
+   - slaat alles op in `profiles/<profiel>/config.env` en biedt aan meteen de eerste back-up te maken.
+4. Rechten later aangepast? Kies **Verbinding en rechten controleren** (`Start-Windows.cmd check`). Dit kost ongeveer 10–20 van de 1000 requests per uur.
+5. Optioneel: **Zelftest** (`Start-Windows.cmd test`) controleert de tool zelf tegen een nep-API en raakt Gripp nooit.
+
+Liever met de hand? Kopieer `config.env.example` naar `profiles/<profiel>/config.env` en vul het in.
 
 Profielen en back-ups staan nooit in git (zie `.gitignore`). Je token en je gegevens worden dus niet meegestuurd als je de tool bijwerkt of deelt.
 
@@ -55,6 +56,7 @@ Start-Windows.cmd backup
 - Houdt rekening met de Gripp-limiet van **1000 requests per uur**. Is die op, dan wacht de import zelf tot het volgende uur. Je mag ook stoppen (Ctrl+C) en later verdergaan met **Onderbroken back-up hervatten** in het menu, of `Start-Windows.cmd resume`.
 - Een eerste back-up kan enkele uren duren, afhankelijk van de grootte van je account.
 - Na afloop staat een **volledigheidsrapport** in `data/current/report.md` in de back-upmap: aantallen per tabel, gebroken verwijzingen, financiële controletotalen en bekende beperkingen.
+- Is Gripp in onderhoud of heeft het een storing (de API stuurt dan door naar een statuspagina zoals status.exact.com), dan wacht de import een paar keer en stopt daarna met een duidelijke melding. Hervat later.
 - **Een mislukte import overschrijft nooit de bestaande back-up.** Mislukt een tabel (bijvoorbeeld door onvoldoende API-rechten), dan blijft de nieuwe snapshot in `data/staging-…` staan en blijft `data/current` ongewijzigd. Pas de API-rol aan en hervat met `--resume`, of publiceer toch met `--accept-partial`.
 
 Opties:
@@ -139,6 +141,9 @@ Start-Mac.command       starter macOS (→ start.sh)
 start.sh                starter macOS/Linux
 tools/node.lock         vastgezette Node.js-versie + SHA-256 (bijwerken: node tools/update-node.mjs)
 cli.mjs                 menu en opdrachten
+lib/setup.mjs           setup-wizard
+lib/check.mjs           verbindingstest en rechtencheck
+lib/prompt.mjs          invoer (ook via een pipe, voor scripts)
 importer/import.mjs     import (alleen-lezen, hervatbaar)
 importer/documents.mjs  PDF's van offertes, opdrachten, inkoopopdrachten
 importer/build.mjs      snapshot → viewer in de back-upmap
