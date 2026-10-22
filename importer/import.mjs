@@ -7,6 +7,10 @@
 //   npm run import -- --accept-partial   ook publiceren als sommige entiteiten faalden
 //   npm run import -- --only=company,offer   alleen deze entiteiten (test; wordt nooit gepubliceerd)
 //   npm run import -- --profile=naam    kies het profiel (nodig als er meerdere zijn)
+//   npm run import -- --auto            hervat een onderbroken import van < 1 dag, anders nieuw (geplande runs)
+//   npm run import -- --documents       ook PDF's van offertes/opdrachten/inkoopopdrachten (of --no-documents;
+//                                       standaard volgens GRIPP_DOCUMENTS in het profiel)
+//   npm run import -- --refresh-files   alle bijlagen opnieuw ophalen, ook als ze al in het archief staan
 //
 // Structuur, binnen de back-upmap van het profiel (zie lib/config.mjs):
 //   data/staging-<batch>/raw/<entiteit>.json   ruwe API-records (bron van waarheid)
@@ -14,6 +18,8 @@
 //   data/staging-<batch>/report.{json,md}      volledigheidsrapport
 //   data/current/                              gepubliceerde snapshot (alleen na geslaagde validatie)
 //   data/previous/                             vorige snapshot
+//   data/history/<batch>/                      oudere snapshots (aantal: GRIPP_KEEP_SNAPSHOTS)
+//   archive/index.json                         wat er al in archive/ staat (bijlagen worden hergebruikt)
 //   archive/files/<fileId>/<naam>              bijlagen (file.getContent)
 //   archive/invoices/<nummer>_<id>.pdf         factuur-PDF's (directpdfurl)
 import fs from 'node:fs';
@@ -58,8 +64,10 @@ export async function runImport(opts = {}) {
   const token = opts.token ?? cfg.token;
   const url = opts.url ?? cfg.apiUrl;
   const client = new GrippClient({ token, url, log });
-  const resume = opts.resume ?? args.has('--resume');
+  let resume = opts.resume ?? args.has('--resume');
   const withFiles = !(opts.noFiles ?? args.has('--no-files'));
+  const refreshFiles = opts.refreshFiles ?? args.has('--refresh-files');
+  const withDocuments = opts.documents ?? (args.has('--documents') ? true : args.has('--no-documents') ? false : cfg.documents);
   const acceptPartial = opts.acceptPartial ?? args.has('--accept-partial');
   const only = (opts.only ?? kv.only)?.split(',').map((s) => s.trim()).filter(Boolean);
   if (only) {
@@ -68,6 +76,12 @@ export async function runImport(opts = {}) {
   }
 
   await fsp.mkdir(DATA, { recursive: true });
+  // --auto (geplande runs): hervat een onderbroken import van minder dan een dag oud, anders begin opnieuw.
+  if (!resume && !only && (opts.auto ?? args.has('--auto'))) {
+    const st = fs.readdirSync(DATA).filter((d) => d.startsWith('staging-')).sort().pop();
+    const s = st && readJson(path.join(DATA, st, 'state.json'), null);
+    resume = !!(s && !s.finishedAt && Date.now() - Date.parse(s.startedAt) < 24 * 3600_000);
+  }
   let stagingDir;
   if (resume) {
     const st = fs.readdirSync(DATA).filter((d) => d.startsWith('staging-')).sort().pop();
@@ -76,6 +90,7 @@ export async function runImport(opts = {}) {
   } else {
     // --only krijgt een eigen naam, zodat --resume en build --preview zo'n testrun niet oppakken.
     stagingDir = path.join(DATA, `${only ? 'only' : 'staging'}-${new Date().toISOString().replace(/[:.]/g, '-')}`);
+    if (!only) await pruneStaging(DATA);
   }
   await fsp.mkdir(path.join(stagingDir, 'raw'), { recursive: true });
   logFile = path.join(stagingDir, 'import.log');
@@ -147,13 +162,19 @@ export async function runImport(opts = {}) {
 
   // ---- 2. bijlagen ----
   if (withFiles) {
+    const index = refreshFiles ? { files: {}, invoicePdfs: {} } : loadArchiveIndex(ARCHIVE, DATA);
+    const reusable = (e) => { try { return e?.ok && fs.statSync(path.join(ARCHIVE, e.path)).size === e.size; } catch { return false; } };
+    const save = async () => { await saveState(); await writeJson(path.join(ARCHIVE, 'index.json'), index); };
     const fileIds = new Set();
     for (const [ent, rows] of Object.entries(records)) {
       for (const row of rows) for (const f of FILE_FIELDS) for (const v of asArray(row[f])) { const id = refId(v); if (id) fileIds.add(Number(id)); }
       if (ent === 'file') for (const row of rows) if (row.id) fileIds.add(Number(row.id));
     }
+    // Een bijlage hoort bij één file-id en verandert niet; staat hij al in archive/, dan niet opnieuw ophalen.
+    let reused = 0;
+    for (const id of fileIds) if (!state.files[id]?.ok && reusable(index.files[id])) { state.files[id] = index.files[id]; reused++; }
     const todo = [...fileIds].filter((id) => !state.files[id]?.ok);
-    log(`▶  Bijlagen: ${fileIds.size} gevonden, ${todo.length} nog op te halen`);
+    log(`▶  Bijlagen: ${fileIds.size} gevonden, ${reused} al in het archief, ${todo.length} op te halen`);
     for (let i = 0; i < todo.length; i += 4) {
       const ids = todo.slice(i, i + 4);
       const res = await client.batch(ids.map((id) => ({ method: 'file.getContent', params: [id] })));
@@ -169,15 +190,22 @@ export async function runImport(opts = {}) {
         const rel = path.join('files', String(id), name);
         await fsp.mkdir(path.join(ARCHIVE, 'files', String(id)), { recursive: true });
         await fsp.writeFile(path.join(ARCHIVE, rel), buf);
-        state.files[id] = { ok: true, name, path: rel.split(path.sep).join('/'), size: buf.length, sha256: sha256(buf) };
+        state.files[id] = index.files[id] = { ok: true, name, path: rel.split(path.sep).join('/'), size: buf.length, sha256: sha256(buf) };
       }
-      if ((i / 4) % 10 === 0) { log(`   bijlagen ${Math.min(i + 4, todo.length)}/${todo.length}`); await saveState(); }
+      if ((i / 4) % 10 === 0) { log(`   bijlagen ${Math.min(i + 4, todo.length)}/${todo.length}`); await save(); }
     }
-    await saveState();
+    await save();
 
     // ---- 3. factuur-PDF's via directpdfurl ----
+    // Een definitieve factuur (met nummer) verandert niet meer; concepten halen we altijd opnieuw op.
+    const invoicePath = (iv) => `invoices/${safeName(`${iv.number ?? 'concept'}_${iv.id}`)}.pdf`;
+    let reusedPdfs = 0;
+    for (const iv of records.invoice ?? []) {
+      const e = index.invoicePdfs[iv.id];
+      if (iv.number != null && !state.invoicePdfs[iv.id]?.ok && e?.path === invoicePath(iv) && reusable(e)) { state.invoicePdfs[iv.id] = e; reusedPdfs++; }
+    }
     const invs = (records.invoice ?? []).filter((iv) => iv.directpdfurl && !state.invoicePdfs[iv.id]?.ok);
-    log(`▶  Factuur-PDF's: ${invs.length} op te halen`);
+    log(`▶  Factuur-PDF's: ${reusedPdfs} al in het archief, ${invs.length} op te halen`);
     for (const iv of invs) {
       try {
         const u = new URL(iv.directpdfurl);
@@ -185,20 +213,22 @@ export async function runImport(opts = {}) {
         const res = await fetch(u);
         const buf = Buffer.from(await res.arrayBuffer());
         if (buf.subarray(0, 4).toString() !== '%PDF') throw new Error(`geen PDF (HTTP ${res.status}, ${res.headers.get('content-type')})`);
-        const rel = `invoices/${safeName(`${iv.number ?? 'concept'}_${iv.id}`)}.pdf`;
+        const rel = invoicePath(iv);
         await fsp.mkdir(path.join(ARCHIVE, 'invoices'), { recursive: true });
         await fsp.writeFile(path.join(ARCHIVE, rel), buf);
-        state.invoicePdfs[iv.id] = { ok: true, path: rel, size: buf.length, sha256: sha256(buf) };
+        state.invoicePdfs[iv.id] = index.invoicePdfs[iv.id] = { ok: true, path: rel, size: buf.length, sha256: sha256(buf) };
       } catch (e) {
         state.invoicePdfs[iv.id] = { ok: false, error: e.message };
       }
       await new Promise((r) => setTimeout(r, 300));
     }
-    await saveState();
+    await save();
   }
 
   // ---- 3b. PDF's van offertes, opdrachten, inkoopopdrachten (document-links uit de records) ----
-  if (withFiles && !only) await fetchDocuments({ dataDir: stagingDir, archiveDir: ARCHIVE, log });
+  // Alleen als het profiel dat wil (GRIPP_DOCUMENTS=aan): Gripp kan het openen als "bekeken" registreren.
+  if (withFiles && withDocuments && !only) await fetchDocuments({ dataDir: stagingDir, archiveDir: ARCHIVE, log });
+  else if (withFiles && !only) log('   Documenten van offertes/opdrachten/inkoopopdrachten overgeslagen (zet GRIPP_DOCUMENTS=aan om ze mee te nemen).');
 
   // ---- 4. validatie + rapport ----
   const report = validate(records, state, list);
@@ -216,7 +246,7 @@ export async function runImport(opts = {}) {
   // ook niet met --accept-partial, anders vervangt een test de echte snapshot.
   if (only) {
     log(`ℹ  Import met --only: snapshot NIET gepubliceerd; data/current blijft ongewijzigd. Resultaat: ${stagingDir}`);
-    return { stagingDir, report, published: false };
+    return { stagingDir, report, published: false, testRun: true };
   }
   if (failed.length && !acceptPartial) {
     log(`⚠  ${failed.length} entiteit(en) mislukt (${failed.join(', ')}). Snapshot NIET gepubliceerd; huidige versie blijft ongewijzigd.`);
@@ -224,13 +254,53 @@ export async function runImport(opts = {}) {
     return { stagingDir, report, published: false };
   }
   const current = path.join(DATA, 'current');
-  const previous = path.join(DATA, 'previous');
-  if (fs.existsSync(current)) { await fsp.rm(previous, { recursive: true, force: true }); await fsp.rename(current, previous); }
+  await rotateSnapshots(DATA, cfg.keepSnapshots);
   await fsp.rename(stagingDir, current);
   logFile = path.join(current, 'import.log');
   log(`✔  Snapshot gepubliceerd als data/current (${state.status}).`);
   await build({ log, config: cfg });
   return { stagingDir: current, report, published: true };
+}
+
+// Index van alles wat al in archive/ staat, over runs heen (archive/index.json). Bestaat hij nog niet
+// (back-up van vóór deze versie), dan beginnen we met wat de laatste gepubliceerde snapshot kent.
+function loadArchiveIndex(ARCHIVE, DATA) {
+  const idx = readJson(path.join(ARCHIVE, 'index.json'), null);
+  if (idx) return { files: idx.files ?? {}, invoicePdfs: idx.invoicePdfs ?? {} };
+  const cur = readJson(path.join(DATA, 'current', 'state.json'), {});
+  const ok = (m) => Object.fromEntries(Object.entries(m ?? {}).filter(([, e]) => e.ok));
+  return { files: ok(cur.files), invoicePdfs: ok(cur.invoicePdfs) };
+}
+
+// Bij publiceren: current → previous → history/<batch>. Bewaart in totaal `keep` oudere snapshots
+// (previous meegeteld). Bijlagen staan los in archive/ en worden door alle snapshots gedeeld.
+async function rotateSnapshots(DATA, keep = 7) {
+  const current = path.join(DATA, 'current');
+  const previous = path.join(DATA, 'previous');
+  const history = path.join(DATA, 'history');
+  if (fs.existsSync(previous)) {
+    if (keep > 1) {
+      const batch = readJson(path.join(previous, 'state.json'), {}).batch ?? `snapshot-${Date.now()}`;
+      const dest = path.join(history, batch.replace(/^staging-/, ''));
+      await fsp.mkdir(history, { recursive: true });
+      await fsp.rm(dest, { recursive: true, force: true });
+      await fsp.rename(previous, dest);
+    } else {
+      await fsp.rm(previous, { recursive: true, force: true });
+    }
+  }
+  if (fs.existsSync(current)) await fsp.rename(current, previous);
+  if (fs.existsSync(history)) {
+    const all = fs.readdirSync(history).sort();
+    for (const d of all.slice(0, Math.max(0, all.length - (keep - 1)))) await fsp.rm(path.join(history, d), { recursive: true, force: true });
+  }
+}
+
+// Bij een nieuwe import: oude, niet-gepubliceerde staging-mappen opruimen. De nieuwste blijft staan
+// (voor analyse of hervatten met --resume).
+async function pruneStaging(DATA) {
+  const st = fs.readdirSync(DATA).filter((d) => d.startsWith('staging-')).sort();
+  for (const d of st.slice(0, -1)) await fsp.rm(path.join(DATA, d), { recursive: true, force: true });
 }
 
 const DISCR = { bedrijf: 'company', contactpersoon: 'contact', medewerker: 'employee', offerte: 'offer', opdracht: 'project' };
@@ -306,5 +376,6 @@ function reportMarkdown(r) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  runImport().catch((e) => { log(`✖  Import afgebroken: ${e.message}`); log(`   Hervatten: kies 'Onderbroken back-up hervatten' in het menu (opdracht: resume${profileArg(activeConfig)}).`); process.exit(1); });
+  // Exitcode 2: import klaar maar niet gepubliceerd (bv. ontbrekende rechten); 1: afgebroken.
+  runImport().then((r) => { if (!r.published && !r.testRun) process.exitCode = 2; }).catch((e) => { log(`✖  Import afgebroken: ${e.message}`); log(`   Hervatten: kies 'Onderbroken back-up hervatten' in het menu (opdracht: resume${profileArg(activeConfig)}).`); process.exit(1); });
 }

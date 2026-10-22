@@ -52,7 +52,8 @@ Kies in het menu **Back-up maken**, of:
 Start-Windows.cmd backup
 ```
 
-- Haalt alle tabellen op (250 records per call, in batches), daarna alle bijlagen, factuur-PDF's en documenten.
+- Haalt alle tabellen op (250 records per call, in batches), daarna de bijlagen en factuur-PDF's, en desgewenst de documenten (zie hieronder).
+- **Bijlagen worden hergebruikt.** Wat al in `archive/` staat (zelfde bestand, zelfde grootte) wordt niet opnieuw opgehaald; de administratie daarvan staat in `archive/index.json`. Definitieve factuur-PDF's worden ook hergebruikt, concepten altijd opnieuw opgehaald. Een tweede back-up is daardoor veel sneller dan de eerste en kost veel minder API-quotum. Alles opnieuw ophalen: `--refresh-files`.
 - Houdt rekening met de Gripp-limiet van **1000 requests per uur**. Is die op, dan wacht de import zelf tot het volgende uur. Je mag ook stoppen (Ctrl+C) en later verdergaan met **Onderbroken back-up hervatten** in het menu, of `Start-Windows.cmd resume`.
 - Een eerste back-up kan enkele uren duren, afhankelijk van de grootte van je account.
 - Na afloop staat een **volledigheidsrapport** in `data/current/report.md` in de back-upmap: aantallen per tabel, gebroken verwijzingen, financiële controletotalen en bekende beperkingen.
@@ -66,10 +67,39 @@ Opties:
 | `--profile=<naam>` | Kies het profiel (nodig als er meer dan één is) |
 | `--resume` | Ga verder met de laatste onderbroken import |
 | `--no-files` | Sla bijlagen en PDF's over |
+| `--documents` / `--no-documents` | Wel/niet de PDF's van offertes, opdrachten en inkoopopdrachten (standaard volgens het profiel) |
+| `--refresh-files` | Alle bijlagen opnieuw ophalen, ook als ze al in het archief staan |
+| `--auto` | Hervat een onderbroken back-up van minder dan een dag oud, anders begin opnieuw (gebruikt door de automatische back-up) |
 | `--accept-partial` | Publiceer ook als sommige tabellen mislukten |
 | `--only=company,offer` | Alleen deze tabellen, om te testen. Wordt **nooit** gepubliceerd: het resultaat komt in `data/only-…` en `data/current` blijft ongewijzigd |
 
 Opties zet je achter de opdracht, bijvoorbeeld `Start-Windows.cmd backup --profile=mijnbedrijf --no-files` (macOS/Linux: `./start.sh backup …`).
+
+Het resultaat van de laatste back-up staat in `laatste-back-up.json` in de back-upmap en bovenaan het menu. Exitcodes: `0` gelukt, `2` klaar maar niet gepubliceerd (bijvoorbeeld door ontbrekende rechten; zie het rapport), `1` afgebroken.
+
+## Automatische back-up
+
+Kies in het menu **Automatische back-up instellen** en geef een tijdstip op (standaard 02:00), of:
+
+```powershell
+Start-Windows.cmd schedule --at=02:00     # instellen
+Start-Windows.cmd schedule                # status
+Start-Windows.cmd schedule --off          # uitzetten
+```
+
+De tool gebruikt wat het besturingssysteem zelf heeft, zonder beheerdersrechten:
+
+| Systeem | Hoe | Let op |
+|---|---|---|
+| Windows | Taakplanner, taak "Gripp Back-up (&lt;profiel&gt;)" | Draait als je bent aangemeld; stond de computer uit, dan wordt de back-up ingehaald zodra je weer aanmeldt |
+| macOS | launchd (`~/Library/LaunchAgents`) | Draait bij het eerstvolgende moment als de Mac uit of in slaap was |
+| Linux | je crontab | Draait alleen als de computer op dat moment aan staat |
+
+Een automatische back-up hervat een onderbroken run van minder dan een dag oud en begint anders opnieuw. De uitvoer staat in `logs/` in de back-upmap (de laatste 30 runs).
+
+## Oude snapshots
+
+Bij elke gepubliceerde back-up schuift de vorige door naar `data/previous/` en daarna naar `data/history/<datum>/`. Standaard blijven 7 oudere snapshots bewaard; stel dat in met `GRIPP_KEEP_SNAPSHOTS` in het profiel. De bijlagen in `archive/` worden door alle snapshots gedeeld en tellen dus niet dubbel. Een oude snapshot bekijken: kopieer hem tijdelijk naar `data/current/` en kies **Viewer opnieuw bouwen**.
 
 ## Archief openen
 
@@ -96,12 +126,17 @@ De back-upmap staat op zichzelf: je kunt hem verplaatsen of kopiëren en daar op
 ├─ viewer/               het archief (inclusief data/data.js)
 ├─ data/current/         laatste snapshot: ruwe API-JSON (bron van waarheid) + rapport
 ├─ data/previous/        vorige snapshot
-└─ archive/              bijlagen, factuur-PDF's, documenten en handmatige exports
+├─ data/history/         oudere snapshots
+├─ archive/              bijlagen, factuur-PDF's, documenten en handmatige exports
+├─ logs/                 uitvoer van automatische back-ups
+└─ laatste-back-up.json  resultaat van de laatste back-up
 ```
+
+**OneDrive of SharePoint?** Liever niet direct als back-upmap. SharePoint voegt eigenschappen toe aan Word- en Excel-bestanden in een documentbibliotheek, waardoor bijlagen niet meer exact gelijk zijn aan Gripp en bij elke back-up opnieuw worden opgehaald. De setup waarschuwt hiervoor. Gebruik een lokale map of NAS en kopieer die desgewenst apart naar de cloud.
 
 ## Documenten van offertes, opdrachten en inkoopopdrachten
 
-Gripp levert bij elk record een document-link mee (`directpdfurl` bij offertes, `viewonlineurl` bij opdrachten en inkoopopdrachten). De import haalt daarmee de PDF's op, zonder het API-quotum te belasten. Los opnieuw draaien kan met de opdracht `documents`.
+Gripp levert bij elk record een document-link mee (`directpdfurl` bij offertes, `viewonlineurl` bij opdrachten en inkoopopdrachten). Daarmee kan de import de PDF's ophalen, zonder het API-quotum te belasten. Dit staat **standaard uit**; de setup vraagt ernaar, en je zet het aan met `GRIPP_DOCUMENTS=aan` in het profiel. Los draaien kan altijd met de opdracht `documents`.
 
 - **Alleen downloaden:** er wordt niets geaccepteerd, ondertekend of verzonden.
 - **Let op:** de online weergave is dezelfde pagina die je klant of leverancier ziet. Gripp kan het openen ervan als "bekeken" in de timeline zetten.
@@ -144,6 +179,7 @@ cli.mjs                 menu en opdrachten
 lib/setup.mjs           setup-wizard
 lib/check.mjs           verbindingstest en rechtencheck
 lib/prompt.mjs          invoer (ook via een pipe, voor scripts)
+lib/schedule.mjs        automatische back-up (Taakplanner, launchd, cron)
 importer/import.mjs     import (alleen-lezen, hervatbaar)
 importer/documents.mjs  PDF's van offertes, opdrachten, inkoopopdrachten
 importer/build.mjs      snapshot → viewer in de back-upmap

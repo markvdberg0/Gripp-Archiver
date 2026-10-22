@@ -58,12 +58,12 @@ const PDF = Buffer.from('%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<<>>\n
 
 export function startMock({ port = 0, failEvery = 7, rateLimit = 1000, deny = [], maintenance = false } = {}) {
   const data = makeData();
-  const stats = { requests: 0, calls: 0, writeAttempts: 0, methods: new Set() };
+  const stats = { requests: 0, calls: 0, writeAttempts: 0, methods: new Set(), pdfGets: 0 };
   let remaining = rateLimit;
   const server = http.createServer(async (req, res) => {
     const base = `http://127.0.0.1:${server.address().port}`;
     if (req.method === 'GET' && req.url.startsWith('/view/')) { res.writeHead(200, { 'Content-Type': 'text/html' }); return res.end(`<html><body><h1>Opdrachtbevestiging</h1><a href="/pdf/doc-${req.url.slice(6)}?type=pdf&amp;download=1">Download PDF</a></body></html>`); }
-    if (req.method === 'GET' && req.url.startsWith('/pdf/')) { res.writeHead(200, { 'Content-Type': 'application/pdf' }); return res.end(PDF); }
+    if (req.method === 'GET' && req.url.startsWith('/pdf/')) { stats.pdfGets++; res.writeHead(200, { 'Content-Type': 'application/pdf' }); return res.end(PDF); }
     if (req.method !== 'POST') { res.writeHead(405); return res.end(); }
     // Zoals Gripp tijdens een storing: doorsturen naar de statuspagina van Exact
     if (maintenance) { stats.redirects = (stats.redirects ?? 0) + 1; res.writeHead(301, { Location: 'https://status.example.test:443/' }); return res.end(); }

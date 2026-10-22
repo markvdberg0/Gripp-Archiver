@@ -10,10 +10,12 @@ import { GrippClient, ReadOnlyViolation } from '../lib/gripp-client.mjs';
 import { runImport } from '../importer/import.mjs';
 import { resolveConfig, parseEnvFile, TOOL_ROOT, slugify, writeProfile } from '../lib/config.mjs';
 import { checkAccess, describeError, formatCheck } from '../lib/check.mjs';
+import { cronLine, macPlist, parseTime, windowsScript } from '../lib/schedule.mjs';
+import { insideAny } from '../lib/setup.mjs';
 
 const SRC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'gripp-backup-test-'));
-const config = resolveConfig({ backupDir: TMP, token: 'test-token', accountName: 'Testbedrijf B.V.' });
+const config = resolveConfig({ backupDir: TMP, token: 'test-token', accountName: 'Testbedrijf B.V.', documents: true });
 
 let ok = 0;
 const t = async (name, fn) => { try { await fn(); ok++; console.log(`  ✔ ${name}`); } catch (e) { console.error(`  ✖ ${name}\n    ${e.stack}`); process.exitCode = 1; } };
@@ -26,7 +28,7 @@ await t('zonder profiel en zonder back-upmap: duidelijke fout', () => assert.thr
 await t('config.env lezen (BOM, quotes, commentaar, CRLF)', () => { const f = path.join(TMP, 'c.env'); fs.writeFileSync(f, '﻿# commentaar\r\nGRIPP_API_TOKEN="abc"\r\nGRIPP_ACCOUNT_NAME=Mijn Bedrijf B.V.\r\n'); assert.deepEqual(parseEnvFile(f), { GRIPP_API_TOKEN: 'abc', GRIPP_ACCOUNT_NAME: 'Mijn Bedrijf B.V.' }); fs.rmSync(f); });
 
 await t('profielnaam uit bedrijfsnaam', () => { assert.equal(slugify('Bakker & Zn. B.V.'), 'bakker-zn-bv'); assert.equal(slugify('Café Ünïcode'), 'cafe-unicode'); assert.equal(slugify('!!!'), 'gripp'); });
-await t('profiel wegschrijven en teruglezen', () => { const dir = path.join(TMP, 'profiles'); const f = writeProfile({ profile: 'acme', token: 'tok', accountName: 'Acme B.V.', backupDir: 'D:\\Back-ups\\Acme B.V' }, dir); assert.deepEqual(parseEnvFile(f), { GRIPP_API_TOKEN: 'tok', GRIPP_ACCOUNT_NAME: 'Acme B.V.', GRIPP_BACKUP_DIR: 'D:\\Back-ups\\Acme B.V' }); assert.throws(() => writeProfile({ profile: '../x', token: 't' }, dir)); assert.throws(() => writeProfile({ profile: 'x', token: 't\nGRIPP_API_URL=evil' }, dir), /regeleinden/); fs.rmSync(dir, { recursive: true }); });
+await t('profiel wegschrijven en teruglezen', () => { const dir = path.join(TMP, 'profiles'); const f = writeProfile({ profile: 'acme', token: 'tok', accountName: 'Acme B.V.', backupDir: 'D:\\Back-ups\\Acme B.V' }, dir); assert.deepEqual(parseEnvFile(f), { GRIPP_API_TOKEN: 'tok', GRIPP_ACCOUNT_NAME: 'Acme B.V.', GRIPP_BACKUP_DIR: 'D:\\Back-ups\\Acme B.V', GRIPP_DOCUMENTS: 'uit', GRIPP_KEEP_SNAPSHOTS: '7' }); assert.throws(() => writeProfile({ profile: '../x', token: 't' }, dir)); assert.throws(() => writeProfile({ profile: 'x', token: 't\nGRIPP_API_URL=evil' }, dir), /regeleinden/); fs.rmSync(dir, { recursive: true }); });
 
 console.log('Verbinding en rechtencheck');
 {
@@ -111,6 +113,52 @@ const callsBefore = mock3.stats.calls;
 const res3 = await runImport({ config, url: mock3.url, resume: true, noFiles: true, only: 'company' });
 await t('hervat de onderbroken staging, niet de only-testrun', () => assert.equal(path.basename(res3.stagingDir), 'staging-9999-resume'));
 await t('hervat vanaf checkpoint (geen eerste pagina opnieuw)', () => { assert.equal(res3.published, false); assert.equal(JSON.parse(fs.readFileSync(path.join(st, 'raw', 'company.json'), 'utf8')).length, 620); assert.ok(mock3.stats.calls - callsBefore <= 3); });
+
+console.log('Herhaalde back-ups: bijlagen hergebruiken, snapshots bewaren, --auto');
+{
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gripp-backup-herhaal-'));
+  const cfg2 = resolveConfig({ backupDir: dir, token: 'test-token', accountName: 'Herhaal', keepSnapshots: 2 });
+  const batchOf = () => JSON.parse(fs.readFileSync(path.join(dir, 'data', 'current', 'state.json'), 'utf8')).batch;
+  const run = async (opts = {}) => { const m = await startMock({ failEvery: 0 }); const r = await runImport({ config: cfg2, url: m.url, resume: false, ...opts }); m.server.close(); return { r, stats: m.stats }; };
+
+  await run();
+  const second = await run();
+  await t('tweede back-up haalt geen bijlagen of factuur-PDF\'s opnieuw op', () => { assert.equal(second.r.published, true); assert.ok(!second.stats.methods.has('file.getContent')); assert.equal(second.stats.pdfGets, 0); assert.equal(second.r.report.files.ok, 4); assert.equal(second.r.report.invoicePdfs.ok, 3); });
+  await t('documenten standaard niet opgehaald (GRIPP_DOCUMENTS uit)', () => assert.ok(!fs.existsSync(path.join(dir, 'data', 'current', 'documents.json'))));
+
+  const idx = JSON.parse(fs.readFileSync(path.join(dir, 'archive', 'index.json'), 'utf8'));
+  const [gone] = Object.values(idx.files);
+  fs.rmSync(path.join(dir, 'archive', gone.path));
+  const third = await run();
+  await t('ontbrekende bijlage wordt wél opnieuw opgehaald', () => { assert.ok(third.stats.methods.has('file.getContent')); assert.ok(fs.existsSync(path.join(dir, 'archive', gone.path))); });
+  const fourth = await run({ refreshFiles: true });
+  await t('--refresh-files haalt alles opnieuw op', () => assert.equal(fourth.stats.pdfGets, 3));
+
+  // Oude, onafgemaakte staging (> 1 dag): --auto begint opnieuw
+  const stale = path.join(dir, 'data', 'staging-9998-oud');
+  fs.mkdirSync(path.join(stale, 'raw'), { recursive: true });
+  fs.writeFileSync(path.join(stale, 'state.json'), JSON.stringify({ batch: 'staging-9998-oud', startedAt: new Date(Date.now() - 2 * 86400_000).toISOString(), entities: {}, files: {}, invoicePdfs: {} }));
+  await run({ resume: undefined, auto: true, noFiles: true });
+  await t('--auto: oude onderbroken import niet hervat, nieuwe gemaakt', () => assert.notEqual(batchOf(), 'staging-9998-oud'));
+  // Recente, onafgemaakte staging: --auto hervat
+  const recent = path.join(dir, 'data', 'staging-9999-auto');
+  fs.mkdirSync(path.join(recent, 'raw'), { recursive: true });
+  fs.writeFileSync(path.join(recent, 'state.json'), JSON.stringify({ batch: 'staging-9999-auto', startedAt: new Date().toISOString(), entities: {}, files: {}, invoicePdfs: {} }));
+  await run({ resume: undefined, auto: true, noFiles: true });
+  await t('--auto: recente onderbroken import hervat', () => assert.equal(batchOf(), 'staging-9999-auto'));
+  await t('oude staging-mappen opgeruimd (hooguit de laatste blijft voor analyse)', () => assert.ok(fs.readdirSync(path.join(dir, 'data')).filter((d) => d.startsWith('staging-')).length <= 1));
+
+  await t('snapshots bewaard volgens instelling (2 = previous + 1 in history)', () => { assert.ok(fs.existsSync(path.join(dir, 'data', 'previous', 'state.json'))); assert.equal(fs.readdirSync(path.join(dir, 'data', 'history')).length, 1); });
+  fs.rmSync(dir, { recursive: true, force: true });
+}
+
+await t('waarschuwing voor OneDrive/SharePoint-map: map binnen een gesynchroniseerde map herkend', () => { const root = path.join(TMP, 'OneDrive - Bedrijf'); assert.ok(insideAny(path.join(root, 'Gripp', 'acme'), [root])); assert.ok(!insideAny(path.join(TMP, 'OneDrive - BedrijfX'), [root])); assert.ok(!insideAny(path.join(TMP, 'elders'), [root])); });
+
+console.log('Inplannen (alleen de opdrachten controleren, er wordt niets ingepland)');
+await t('tijdstip controleren', () => { assert.deepEqual(parseTime('2:05'), { hour: 2, minute: 5, text: '02:05' }); assert.throws(() => parseTime('24:00')); assert.throws(() => parseTime('morgen')); });
+await t('Windows: taak start de PowerShell-starter met --auto --scheduled', () => { const s = windowsScript('acme', parseTime('02:30')); assert.match(s, /Register-ScheduledTask -TaskName 'Gripp Back-up \(acme\)'/); assert.match(s, /start\.ps1" backup --auto --scheduled --profile=acme/); assert.match(s, /-StartWhenAvailable/); assert.match(s, /-At '02:30'/); });
+await t('macOS: launchd-plist', () => { const x = macPlist('acme', parseTime('02:30')); assert.match(x, /<key>Hour<\/key><integer>2<\/integer><key>Minute<\/key><integer>30<\/integer>/); assert.match(x, /<string>--profile=acme<\/string>/); });
+await t('Linux: cron-regel', () => assert.match(cronLine('acme', parseTime('02:30')), /^30 2 \* \* \* cd '.+' && \/bin\/sh \.\/start\.sh backup --auto --scheduled --profile=acme .*# gripp-backup:acme$/));
 
 // terugzetten naar volledige dataset voor viewer-test
 await runImport({ config, url: mock.url, resume: false });
