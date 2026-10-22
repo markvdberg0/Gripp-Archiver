@@ -1,0 +1,16 @@
+{
+  "name": "gripp-backup",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Onofficiële, alleen-lezende back-up van een Gripp-account, met een offline viewer",
+  "license": "MIT",
+  "type": "module",
+  "engines": { "node": ">=18.17" },
+  "scripts": {
+    "import": "node importer/import.mjs",
+    "build": "node importer/build.mjs",
+    "documents": "node importer/documents.mjs",
+    "serve": "node serve.mjs",
+    "test": "node test/run.mjs"
+  }
+}

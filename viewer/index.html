@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'">
+  <title>Gripp-archief</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar" id="sidebar" aria-label="Hoofdmenu"></aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-toggle" id="menuToggle" aria-label="Menu">☰</button>
+      <form class="search" id="globalSearch" role="search" autocomplete="off">
+        <input type="search" id="globalQ" placeholder="Archief doorzoeken (naam, nummer, onderwerp…)" aria-label="Zoeken">
+      </form>
+      <span class="ro-badge" title="Dit archief kan niets wijzigen">Alleen-lezen archief</span>
+    </header>
+    <main id="app" class="content" tabindex="-1"><p class="muted pad">Laden…</p></main>
+  </div>
+  <script src="data/data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

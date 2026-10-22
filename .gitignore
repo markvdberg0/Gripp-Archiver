@@ -1,0 +1,21 @@
+# Profielen bevatten API-tokens: nooit in git. Alleen de uitleg wordt gedeeld.
+profiles/*
+!profiles/README.md
+
+# Back-ups bevatten bedrijfs- en persoonsgegevens: nooit in git.
+backups/
+data/
+archive/
+viewer/data/
+
+# Oude configuratie (vóór profielen)
+.env
+*.env
+!config.env.example
+
+# Overig
+node_modules/
+.runtime/
+*.log
+.DS_Store
+Thumbs.db
