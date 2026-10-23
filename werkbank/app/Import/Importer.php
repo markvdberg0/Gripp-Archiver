@@ -45,6 +45,11 @@ final class Importer
         Mappers\TaskMapper::class,
         Mappers\CalendarItemMapper::class,
         Mappers\HourMapper::class,
+        Mappers\ContractMapper::class,
+        Mappers\ContractLineMapper::class,
+        Mappers\InvoiceMapper::class,
+        Mappers\InvoiceLineMapper::class,
+        Mappers\PaymentMapper::class,
         Mappers\TimelineMapper::class,
     ];
 

@@ -77,6 +77,20 @@ class Project extends Model
         return $this->hasMany(Hour::class);
     }
 
+    /** Facturen voor deze opdracht: als hoofdopdracht of via een factuurregel. */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    /** Per opdrachtregel: al gefactureerd aantal (creditfacturen tellen negatief mee). */
+    public function invoicedQuantities(): array
+    {
+        return InvoiceLine::query()->whereIn('project_line_id', $this->lines()->pluck('id'))
+            ->whereHas('invoice')->groupBy('project_line_id')->selectRaw('project_line_id, sum(quantity) as q')->pluck('q', 'project_line_id')
+            ->map(fn ($q) => (float) $q)->all();
+    }
+
     public function timeline(): HasMany
     {
         return $this->hasMany(TimelineEntry::class)->latest('occurred_at');

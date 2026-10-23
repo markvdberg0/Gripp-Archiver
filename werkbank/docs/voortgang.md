@@ -82,3 +82,31 @@ Per fase: wat werkt aantoonbaar, hoe is het getest, welke beperkingen zijn er en
 - Verlof (Gripp: absencerequest, 3 records) is nog niet overgenomen.
 
 **Volgende stap:** fase 4, verkoopfacturen.
+
+## Fase 4 — Verkoopfacturen, betalingen en contracten
+
+**Wat werkt**
+
+- Facturen: lijst met filters (concept, openstaand, vervallen, betaald, credit; relatie; jaar) en totalen (excl., incl., openstaand); concept maken en wijzigen met regels inclusief grootboek en kostenplaats per regel.
+- **Definitief maken**: doorlopend factuurnummer (sluit aan op geïmporteerde nummers of de ingestelde startwaarde), factuurdatum, vervaldatum uit de betaaltermijn van de relatie of de standaard; daarna niet meer te wijzigen of te verwijderen. Corrigeren gaat met een **creditfactuur** (concept met negatieve regels, gekoppeld aan het origineel).
+- **Betalingen** registreren (ook gedeeltelijk en negatief) en verwijderen; openstaand = totaal incl. btw − betalingen; status openstaand, vervallen, betaald.
+- **Herinneringen**: herinnering, tweede herinnering, aanmaning vastleggen bij vervallen facturen; de PDF toont dan de herinnering met openstaand bedrag.
+- **Factuur uit een opdracht**: voorstel met de nog niet gefactureerde regels (per opdrachtregel bijgehouden), of een **termijnfactuur** met een percentage van het opdrachttotaal; het scherm toont hoeveel van de opdracht al is gefactureerd.
+- **Contracten** met regels per periode en frequentie (week tot jaar); elke nacht (en met een knop) worden conceptfacturen gemaakt voor contracten die aan de beurt zijn, met inhalen van gemiste periodes en stoppen op de einddatum.
+- Factuur-PDF in eigen opmaak, met factuuradres, btw-specificatie, btw-verlegd-vermelding en slottekst.
+- Import: contracten en contractregels, facturen (status, herinneringsfase, betaald/openstaand, Gripp-PDF), factuurregels (grootboek, kostenplaats, opdracht en opdrachtregel) en betalingen; de hoofdopdracht van een factuur wordt afgeleid uit de regels.
+
+**Hoe getest**
+
+- 86 tests (656 controles), nieuw: concept zonder nummer, definitief maken met nummering en vervaldatum, vergrendeling, betalingen tot betaald, herinneringen en PDF, creditfactuur, factuur uit opdracht (restregels en termijn), contractfacturatie inclusief inhalen en einddatum, rechten; import van facturen, regels, betalingen, creditnota, concept, PDF en contracten, en een tweede import zonder wijzigingen of conflicten.
+- Browser: facturenlijst met filter "vervallen", termijnvoorstel uit een echte opdracht (30% van het opdrachttotaal, met de melding welk deel al is gefactureerd).
+- Echte back-up: 71 facturen, 349 regels, 62 betalingen, 2 contracten. Som incl. btw en som openstaand gelijk aan de bron (en aan het rapport van de back-uptool); bij alle 71 facturen tellen de regels op tot het totaal en sluit totaal − betalingen aan op openstaand; 71 Gripp-factuur-PDF's gekoppeld.
+
+**Beperkingen**
+
+- Facturen en herinneringen worden niet per e-mail verstuurd; je downloadt de PDF (aanname 3).
+- Geen UBL/e-factuur-export, geen SEPA-incassobestand en geen koppeling met bank of boekhouding.
+- Bij geïmporteerde opdrachten die in termijnen zijn gefactureerd (zonder koppeling per regel) kan het restregelvoorstel te hoog zijn; het scherm waarschuwt hiervoor met het al gefactureerde bedrag.
+- Na de import hebben contracten geen volgende factuurdatum, zodat Werkbank niet ongemerkt naast Gripp gaat factureren. Die stel je per contract in bij de overstap.
+
+**Volgende stap:** fase 5, inkoop.

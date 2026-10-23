@@ -132,6 +132,30 @@ class FakeBackup
                 ['id' => 51, 'date' => $d('2025-07-01'), 'employee' => $r(100), 'offerprojectbase' => $r(901, '', 'opdracht'), 'offerprojectline' => $r(900), 'amount' => 8, 'status' => $r(3, 'Gefiatteerd'), 'authorizedby' => $r(103), 'authorizedon' => $d('2025-07-05'), 'description' => 'Montage'],
                 ['id' => 52, 'date' => $d('2025-07-02'), 'employee' => $r(100), 'offerprojectbase' => $r(901, '', 'opdracht'), 'amount' => 2, 'status' => $r(1, 'Concept')],
             ],
+            // Fase 4
+            'contract' => [
+                ['id' => 61, 'number' => 50002, 'name' => 'Huur containerstation', 'company' => $r(1), 'status' => $r(1, 'Actief'), 'frequency' => $r(1, 'Iedere maand'), 'date' => $d('2026-07-14'), 'subject_invoice' => 'Huur station'],
+            ],
+            'contractline' => [
+                ['id' => 62, 'contract' => $r(61), 'rowtype' => $r(1, 'NORMAAL'), 'additionalsubject' => 'Huur', 'amount' => 1, 'sellingprice' => '850.00', 'discount' => 0, 'vat' => $r(27, 'BTW 21%'), 'ledger' => $r(8000), '_ordering' => 0],
+            ],
+            'invoice' => [
+                ['id' => 2001, 'number' => 200441, 'company' => $r(1), 'contact' => $r(11), 'status' => $r(3, 'Verzonden'), 'fase' => 'Herinnering', 'subject' => 'Aanbetaling opdracht 890140',
+                    'date' => $d('2025-07-01'), 'expirydate' => $d('2025-07-31'), 'totalincldiscountexclvat' => '1000.00', 'totalinclvat' => '1210.00', 'totalpayed' => '500.00', 'totalopeninclvat' => '710.00', 'paymentmethod' => $r(1, 'Overboeking')],
+                ['id' => 2002, 'number' => 200442, 'company' => $r(1), 'status' => $r(3, 'Verzonden'), 'fase' => 'Factuur', 'subject' => 'Creditnota', 'date' => $d('2025-08-01'), 'expirydate' => $d('2025-08-31'),
+                    'totalincldiscountexclvat' => '-100.00', 'totalinclvat' => '-121.00', 'totalpayed' => '-121.00', 'totalopeninclvat' => '0.00'],
+                ['id' => 2003, 'company' => $r(2), 'status' => $r(1, 'Concept'), 'subject' => 'Nog te versturen', 'totalincldiscountexclvat' => '50.00', 'totalinclvat' => '60.50', 'totalpayed' => '0.00', 'totalopeninclvat' => '60.50'],
+            ],
+            'invoiceline' => [
+                ['id' => 3001, 'invoice' => $r(2001), 'rowtype' => $r(1, 'NORMAAL'), 'additionalsubject' => 'Aanbetaling', 'amount' => 1, 'sellingprice' => '1000.00', 'discount' => 0, 'vat' => $r(27, 'BTW 21%'),
+                    'ledger' => $r(8000), 'project' => $r(901), 'part' => $r(900), '_ordering' => 0],
+                ['id' => 3002, 'invoice' => $r(2002), 'rowtype' => $r(1, 'NORMAAL'), 'additionalsubject' => 'Correctie', 'amount' => -1, 'sellingprice' => '100.00', 'discount' => 0, 'vat' => $r(27, 'BTW 21%'), '_ordering' => 0],
+                ['id' => 3003, 'invoice' => $r(2003), 'rowtype' => $r(1, 'NORMAAL'), 'additionalsubject' => 'Advies', 'amount' => 1, 'sellingprice' => '50.00', 'discount' => 0, 'vat' => $r(27, 'BTW 21%'), '_ordering' => 0],
+            ],
+            'payment' => [
+                ['id' => 4001, 'invoice' => $r(2001), 'date' => $d('2025-07-10'), 'amount' => '500.00', 'notes' => 'Deelbetaling'],
+                ['id' => 4002, 'invoice' => $r(2002), 'date' => $d('2025-08-02'), 'amount' => '-121.00'],
+            ],
             'timelineentry' => [
                 ['id' => 501, 'company' => $r(1), 'contact' => $r(11), 'employee' => $r(103, 'Anna de Vries'), 'timelinetype' => $r(4, 'RECEIVEDEMAIL'), 'date' => $d('2026-09-22 10:15:00'),
                     'subject' => 'Aanvraag', 'message' => '<p>Graag een <b>offerte</b><script>alert(1)</script><img src="https://evil.test/x.png"></p>', 'files' => [$r(9002, 'mail.pdf')]],

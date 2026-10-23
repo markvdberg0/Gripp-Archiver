@@ -11,7 +11,8 @@
     use App\Support\Bedragen;
     $extra = $extra ?? [];
     $showBuying = $showBuying ?? false;
-    $rows = old('lines', $lines->map(fn ($l) => $l->only(array_merge(['id', 'row_type', 'product_id', 'title', 'description', 'quantity', 'unit_id', 'unit_price', 'buying_price', 'discount', 'vat_rate_id'], array_keys($extra))))->all());
+    $hiddenFields = $hiddenFields ?? [];
+    $rows = old('lines', $lines->map(fn ($l) => is_array($l) ? $l : $l->only(array_merge(['id', 'row_type', 'product_id', 'title', 'description', 'quantity', 'unit_id', 'unit_price', 'buying_price', 'discount', 'vat_rate_id'], array_keys($extra), $hiddenFields)))->all());
     $tableId = $tableId ?? 'regels';
 @endphp
 @error('lines')<div class="alert alert-error">{{ $message }}</div>@enderror

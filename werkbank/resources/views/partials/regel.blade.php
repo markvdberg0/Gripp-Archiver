@@ -1,7 +1,8 @@
 @php use App\Support\Bedragen; $n = "lines[$i]"; @endphp
 <tr data-line>
     <td class="nowrap"><a href="#" data-up title="Omhoog" aria-label="Omhoog">▲</a> <a href="#" data-down title="Omlaag" aria-label="Omlaag">▼</a>
-        @if (! empty($r['id']))<input type="hidden" name="{{ $n }}[id]" value="{{ $r['id'] }}">@endif</td>
+        @if (! empty($r['id']))<input type="hidden" name="{{ $n }}[id]" value="{{ $r['id'] }}">@endif
+        @foreach ($hiddenFields ?? [] as $hf)@if (! empty($r[$hf]))<input type="hidden" name="{{ $n }}[{{ $hf }}]" value="{{ $r[$hf] }}">@endif @endforeach</td>
     <td><select name="{{ $n }}[row_type]" data-f="row_type" aria-label="Soort regel">
         @foreach (\App\Models\DocumentLine::ROW_TYPES as $k => $v)<option value="{{ $k }}" @selected(($r['row_type'] ?? 'normaal') === $k)>{{ $v }}</option>@endforeach
     </select></td>
