@@ -14,7 +14,7 @@ Eén zip-bestand `werkbank-backup-<datum>-<tijd>.zip` met:
 
 Niet in de back-up: sessies, cache, wachtrij en wachtwoordreset-tokens. De `APP_KEY` staat **niet** in de back-up; bewaar die apart (bijvoorbeeld in een wachtwoordkluis).
 
-Omdat de gegevens als JSON worden opgeslagen, kun je een back-up van SQLite ook terugzetten op MariaDB of PostgreSQL (en andersom).
+De gegevens staan als JSON in de back-up, zodat een back-up ook op een ander databasetype kan worden teruggezet (bijvoorbeeld van SQLite naar MariaDB of PostgreSQL). Booleans worden daarbij omgezet en tabellen worden in de volgorde van hun verwijzingen gevuld. Getest is herstel binnen hetzelfde databasetype (SQLite lokaal, MariaDB en PostgreSQL in CI); de overstap tussen typen is ontworpen maar niet als geheel getest. Maak bij zo'n overstap eerst een proefherstel.
 
 ## Automatisch
 

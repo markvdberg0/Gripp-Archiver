@@ -5,7 +5,7 @@ Werkbank draait op elke server met Docker, of op een gewone PHP-server. De stand
 ## Benodigd
 
 - **Docker-route:** Docker Engine 24+ met Docker Compose.
-- **Handmatig:** PHP 8.3, 8.4 of 8.5 met de extensies `pdo_sqlite` (of `pdo_mysql`/`pdo_pgsql`), `mbstring`, `intl`, `zip`, `gd`, `fileinfo`, `openssl`, `bcmath`; Composer 2; een webserver (nginx, Apache of Caddy) met de documentroot op `public/`.
+- **Handmatig:** PHP 8.4 (minimaal 8.4.1) of 8.5 met de extensies `pdo_sqlite` (of `pdo_mysql`/`pdo_pgsql`), `mbstring`, `intl`, `zip`, `gd`, `fileinfo`, `openssl`, `bcmath`; Composer 2; een webserver (nginx, Apache of Caddy) met de documentroot op `public/`.
 - Ongeveer 1 GB schijfruimte plus de omvang van je bijlagen (bij de import worden bijlagen ontdubbeld opgeslagen).
 
 ## Met Docker

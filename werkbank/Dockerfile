@@ -4,9 +4,10 @@
 FROM composer:2 AS vendor
 WORKDIR /app
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-interaction --no-scripts --no-autoloader --prefer-dist
+# Het composer-image heeft niet alle PHP-extensies; die zitten in het runtime-image hieronder.
+RUN composer install --no-dev --no-interaction --no-scripts --no-autoloader --prefer-dist --ignore-platform-reqs
 COPY . .
-RUN composer dump-autoload --no-dev --optimize --classmap-authoritative
+RUN composer dump-autoload --no-dev --optimize --classmap-authoritative --ignore-platform-reqs
 
 FROM php:8.4-apache
 

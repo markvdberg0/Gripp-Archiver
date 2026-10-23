@@ -34,4 +34,4 @@ Ging er iets mis: zet de vorige code terug (`git checkout <vorige tag>` of de vo
 
 ## PHP en Laravel
 
-Werkbank draait op PHP 8.3 tot en met 8.5 en Laravel 13. Beveiligingsupdates van afhankelijkheden: `composer update` gevolgd door de tests (`php artisan test`). De GitHub-workflow draait de tests op alle ondersteunde PHP-versies en op SQLite, MariaDB en PostgreSQL.
+Werkbank draait op PHP 8.4 (minimaal 8.4.1) en 8.5 met Laravel 13. Beveiligingsupdates van afhankelijkheden: `composer update` gevolgd door de tests (`php artisan test`). De GitHub-workflow draait de tests op alle ondersteunde PHP-versies en op SQLite, MariaDB en PostgreSQL.

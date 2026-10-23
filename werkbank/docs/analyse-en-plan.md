@@ -59,7 +59,7 @@ Niet in gebruik (0 records of geen rechten): afdelingen, jaardoelen, dossiers, o
 
 ## 4. Architectuur
 
-- **Laravel 13** op **PHP 8.4** (minimaal 8.3). Eén applicatie (monoliet), Blade-schermen, eigen CSS, geen JavaScript-buildstap. Dat houdt selfhosting en onderhoud eenvoudig.
+- **Laravel 13** op **PHP 8.4** (minimaal 8.4.1, ook 8.5; de Symfony 8-onderdelen van Laravel 13 vragen dat). Eén applicatie (monoliet), Blade-schermen, eigen CSS, geen JavaScript-buildstap. Dat houdt selfhosting en onderhoud eenvoudig.
 - **Database:** SQLite standaard (één bestand, eenvoudig te back-uppen); MariaDB/MySQL of PostgreSQL via `.env`. Migraties zijn database-onafhankelijk.
 - **Bedragen** als decimal (2 of 4 decimalen) en berekend in PHP met afronding per regel. Geen floats in de database.
 - **Rechten:** vaste rollen met een rechtenmatrix in code (`app/Support/Rechten.php`), afgedwongen via Gates en policies.

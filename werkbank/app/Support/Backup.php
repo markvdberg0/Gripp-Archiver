@@ -68,7 +68,13 @@ final class Backup
                 $scratch[] = $file;
                 $out = fopen($file, 'wb');
                 $rows = 0;
-                foreach (DB::table($table)->cursor() as $row) {
+                // Op id gesorteerd: dan staat een record vóór records die ernaar verwijzen in dezelfde tabel
+                // (bv. een creditfactuur na de factuur), wat PostgreSQL bij het terugzetten vereist.
+                $query = DB::table($table);
+                if (Schema::hasColumn($table, 'id')) {
+                    $query->orderBy('id');
+                }
+                foreach ($query->cursor() as $row) {
                     fwrite($out, json_encode($row, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION)."\n");
                     $rows++;
                 }
@@ -152,17 +158,24 @@ final class Backup
         Schema::disableForeignKeyConstraints();
         DB::beginTransaction();
         try {
-            foreach (array_keys($manifest['tables']) as $table) {
-                if (! Schema::hasTable($table)) {
-                    continue;
-                }
+            $present = array_values(array_filter(array_keys($manifest['tables']), fn ($t) => Schema::hasTable($t)));
+            foreach (self::insertOrder($present) as $table) {
+                // Booleans: SQLite en MariaDB bewaren 0/1, PostgreSQL true/false. Omzetten maakt een back-up
+                // uitwisselbaar tussen databasetypen.
+                $booleans = array_column(array_filter(Schema::getColumns($table), fn ($c) => in_array(strtolower($c['type_name']), ['bool', 'boolean'], true)), 'name');
                 $stream = $zip->getStream("database/{$table}.jsonl");
                 $batch = [];
                 while (($line = fgets($stream)) !== false) {
                     if (trim($line) === '') {
                         continue;
                     }
-                    $batch[] = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
+                    $row = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
+                    foreach ($booleans as $col) {
+                        if (isset($row[$col])) {
+                            $row[$col] = (bool) $row[$col];
+                        }
+                    }
+                    $batch[] = $row;
                     if (count($batch) >= 200) {
                         DB::table($table)->insert($batch);
                         $batch = [];
@@ -240,6 +253,38 @@ final class Backup
         }
 
         return $zip;
+    }
+
+    /**
+     * Volgorde waarin tabellen gevuld worden: eerst de tabellen waarnaar verwezen wordt. Nodig voor PostgreSQL,
+     * waar het uitschakelen van foreign keys de controle niet uitstelt. Bij een kringverwijzing komen de
+     * overgebleven tabellen er in de oorspronkelijke volgorde achter.
+     *
+     * @param  list<string>  $tables
+     * @return list<string>
+     */
+    public static function insertOrder(array $tables): array
+    {
+        $deps = [];
+        foreach ($tables as $t) {
+            $deps[$t] = array_values(array_unique(array_filter(
+                array_map(fn ($fk) => $fk['foreign_table'], Schema::getForeignKeys($t)),
+                fn ($f) => $f !== $t && in_array($f, $tables, true)
+            )));
+        }
+        $order = [];
+        while ($deps) {
+            $ready = array_keys(array_filter($deps, fn ($d) => ! array_diff($d, $order)));
+            if (! $ready) {
+                return array_merge($order, array_keys($deps));
+            }
+            foreach ($ready as $t) {
+                $order[] = $t;
+                unset($deps[$t]);
+            }
+        }
+
+        return $order;
     }
 
     /** PostgreSQL: reeksen (auto-increment) na het invoegen met expliciete id's bijwerken. */

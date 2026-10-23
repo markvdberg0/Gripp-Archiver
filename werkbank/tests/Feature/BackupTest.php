@@ -92,6 +92,15 @@ class BackupTest extends TestCase
         $this->assertCount(2, Backup::list());
     }
 
+    public function test_herstelvolgorde_eerst_tabellen_waarnaar_verwezen_wordt(): void
+    {
+        $order = array_flip(Backup::insertOrder(Backup::tables()));
+        foreach ([['users', 'employees'], ['companies', 'contacts'], ['files', 'attachments'], ['invoices', 'invoice_lines'], ['invoice_lines', 'hours'], ['purchase_orders', 'purchase_invoice_lines']] as [$parent, $child]) {
+            $this->assertLessThan($order[$child], $order[$parent], "{$parent} vóór {$child}");
+        }
+        $this->assertCount(count(Backup::tables()), $order);
+    }
+
     public function test_beheerpagina_back_ups(): void
     {
         $this->actingAsRole('beheerder');

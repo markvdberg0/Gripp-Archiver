@@ -26,7 +26,8 @@ class CompanyTest extends TestCase
         Company::factory()->create(['name' => 'Gamma Oud', 'active' => false]);
 
         $this->get('/relaties')->assertOk()->assertSee('Alfa Techniek')->assertSee('Beta Staal')->assertDontSee('Gamma Oud');
-        $this->get('/relaties?q=zwolle')->assertSee('Alfa Techniek')->assertDontSee('Beta Staal');
+        $this->get('/relaties?q=zwolle')->assertSee('Alfa Techniek')->assertDontSee('Beta Staal'); // hoofdletterongevoelig
+        $this->get('/relaties?q=ALFA')->assertSee('Alfa Techniek');
         $this->get('/relaties?rol=is_supplier')->assertSee('Beta Staal')->assertDontSee('Alfa Techniek');
         $this->get('/relaties?actief=0')->assertSee('Gamma Oud');
         $this->get('/relaties?q=%25')->assertOk()->assertDontSee('Alfa Techniek'); // % wordt letterlijk gezocht
