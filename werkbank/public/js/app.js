@@ -15,7 +15,13 @@
 
   // Regels-editor: regels toevoegen/verwijderen en totalen live tonen.
   // Zelfde regel als de server (Bedragen::parse): met komma is de punt een duizendtal-scheiding.
-  function num(v) { var s = String(v || '').replace(/[\s€]/g, ''); if (s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.'); var n = parseFloat(s); return isNaN(n) ? 0 : n; }
+  function num(v) {
+    var s = String(v || '').replace(/[\s€]/g, ''), c = s.lastIndexOf(','), d = s.lastIndexOf('.');
+    if (c >= 0 && c > d) s = s.replace(/\./g, '').replace(',', '.');
+    else if (c >= 0) s = s.replace(/,/g, '');
+    else if (/^-?\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+    var n = parseFloat(s); return isNaN(n) ? 0 : n;
+  }
   function eur(n) { return '€ ' + n.toLocaleString('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
   function recalc(table) {

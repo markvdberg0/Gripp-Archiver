@@ -18,7 +18,7 @@
             <tbody>
             @foreach ($hours as $h)
                 <tr>
-                    <td><input type="checkbox" name="ids[]" value="{{ $h->id }}" checked aria-label="Selecteren"></td>
+                    <td>@if ($h->employee_id === auth()->user()->employee?->id)<span class="muted small" title="Eigen uren fiatteert iemand anders">eigen</span>@else<input type="checkbox" name="ids[]" value="{{ $h->id }}" checked aria-label="Selecteren">@endif</td>
                     <td class="nowrap">{{ Format::date($h->date) }}</td>
                     <td>{{ $h->employee?->name }}</td>
                     <td>{{ $h->project?->number }} {{ $h->project?->name }} @if ($h->projectLine)<div class="muted small">{{ $h->projectLine->label() }}</div>@endif</td>

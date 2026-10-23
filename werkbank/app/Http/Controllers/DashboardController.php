@@ -30,7 +30,7 @@ class DashboardController extends Controller
         return view('dashboard', [
             'tiles' => array_merge($tiles, $this->extraTiles($request)),
             'recent' => $user->can('relaties.bekijken')
-                ? TimelineEntry::with(['company', 'employee', 'user'])->where('type', '!=', 'systeem')->latest('occurred_at')->limit(10)->get()
+                ? TimelineEntry::with(['company', 'employee', 'user'])->visibleTo($user)->where('type', '!=', 'systeem')->latest('occurred_at')->limit(10)->get()
                 : collect(),
             'lastImport' => $user->can('beheer.import') ? ImportRun::where('dry_run', false)->latest()->first() : null,
             'myTasks' => $user->employee ? Task::with('project')->open()->where('employee_id', $user->employee->id)->orderByRaw('deadline is null')->orderBy('deadline')->limit(8)->get() : collect(),

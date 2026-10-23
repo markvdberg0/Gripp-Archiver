@@ -21,6 +21,11 @@ class PurchasePaymentMapper extends Mapper
         return PurchasePayment::class;
     }
 
+    public function parentConflict(array $row, Context $ctx): ?string
+    {
+        return $this->parentState(PurchaseInvoice::class, $ctx->id(PurchaseInvoice::class, $row['purchaseinvoice'] ?? null));
+    }
+
     public function map(array $row, Context $ctx): ?array
     {
         return [

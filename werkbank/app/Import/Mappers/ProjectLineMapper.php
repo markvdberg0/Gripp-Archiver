@@ -33,6 +33,11 @@ class ProjectLineMapper extends LineMapper
         return $discr !== null ? $discr === 'opdracht' : $ctx->id(Project::class, $base) !== null;
     }
 
+    protected function parentClass(): string
+    {
+        return Project::class;
+    }
+
     protected function parentColumn(): string
     {
         return 'project_id';

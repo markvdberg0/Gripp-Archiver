@@ -102,7 +102,7 @@ class ProjectController extends Controller
         $hoursPerEmployee = Hour::where('project_id', $opdracht->id)->with('employee')->get()->groupBy('employee_id')
             ->map(fn ($g) => ['name' => $g->first()->employee?->name, 'total' => $g->sum('hours'), 'approved' => $g->where('status', 'gefiatteerd')->sum('hours')]);
         $tasks = $opdracht->tasks()->with('employee')->orderBy('completed')->orderBy('deadline')->get();
-        $timeline = $opdracht->timeline()->with(['employee', 'user', 'files'])->paginate(25);
+        $timeline = $opdracht->timeline()->visibleTo(request()->user())->with(['employee', 'user', 'files'])->paginate(25);
 
         return view('projects.show', [
             'project' => $opdracht, 'vat' => $opdracht->vatBreakdown(), 'hoursPerLine' => $hoursPerLine, 'hoursPerEmployee' => $hoursPerEmployee,

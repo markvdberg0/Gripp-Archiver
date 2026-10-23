@@ -25,6 +25,11 @@ class InvoiceLineMapper extends LineMapper
         return InvoiceLine::class;
     }
 
+    protected function parentClass(): string
+    {
+        return Invoice::class;
+    }
+
     protected function parentColumn(): string
     {
         return 'invoice_id';
@@ -52,6 +57,9 @@ class InvoiceLineMapper extends LineMapper
         if (! $ctx->dryRun) {
             // Hoofdopdracht van een factuur: de opdracht waar de meeste regels naar verwijzen.
             foreach (Invoice::whereNotNull('gripp_id')->whereNull('project_id')->with('lines')->get() as $invoice) {
+                if ($invoice->isLocallyModified()) {
+                    continue; // in Werkbank gewijzigd: niets afleiden of overschrijven
+                }
                 $project = $invoice->lines->whereNotNull('project_id')->countBy('project_id')->sortDesc()->keys()->first();
                 if ($project) {
                     // Rechtstreeks, zonder updated_at te raken (anders lijkt de factuur lokaal gewijzigd).

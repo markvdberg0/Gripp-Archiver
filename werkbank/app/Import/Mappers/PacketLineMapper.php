@@ -19,6 +19,11 @@ class PacketLineMapper extends LineMapper
         return PacketLine::class;
     }
 
+    protected function parentClass(): string
+    {
+        return Packet::class;
+    }
+
     protected function parentColumn(): string
     {
         return 'packet_id';

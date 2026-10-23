@@ -62,7 +62,7 @@ class PurchaseInvoiceController extends Controller
         $invoice = DB::transaction(function () use ($data, $request) {
             $invoice = PurchaseInvoice::create(Arr::except($data, ['lines']) + [
                 'booking_number' => Nummering::next('boeknummer', 'purchase_invoices', 'booking_number'),
-                'phase' => 'concept', 'created_by' => $request->user()->id, 'due_date' => $data['due_date'] ?? $this->dueDate($data),
+                'phase' => 'concept', 'created_by' => $request->user()->id, 'updated_by' => $request->user()->id, 'due_date' => $data['due_date'] ?? $this->dueDate($data),
             ]);
             Regels::sync($invoice, $this->withProject($data), self::LINE_EXTRA);
             $invoice->recalculate();
@@ -97,8 +97,8 @@ class PurchaseInvoiceController extends Controller
     {
         abort_unless($inkoopfactuur->isEditable(), 422, 'Deze inkoopfactuur kan niet meer worden gewijzigd.');
         $data = $this->validated($request);
-        DB::transaction(function () use ($inkoopfactuur, $data) {
-            $inkoopfactuur->update(Arr::except($data, ['lines']));
+        DB::transaction(function () use ($inkoopfactuur, $data, $request) {
+            $inkoopfactuur->update(Arr::except($data, ['lines']) + ['updated_by' => $request->user()->id]);
             Regels::sync($inkoopfactuur, $this->withProject($data), self::LINE_EXTRA);
             $inkoopfactuur->recalculate();
         });
@@ -145,6 +145,10 @@ class PurchaseInvoiceController extends Controller
                 break;
             case 'terug':
                 abort_unless($user->can('inkoop.goedkeuren') || $inkoopfactuur->phase === 'controle', 403);
+                // Verwerkte of (deels) betaalde facturen niet meer openbreken: bedragen zijn dan definitief.
+                if ($inkoopfactuur->phase === 'verwerkt' || $inkoopfactuur->payments()->exists()) {
+                    return back()->withErrors(['inkoopfactuur' => 'Een verwerkte of (deels) betaalde inkoopfactuur kan niet terug naar concept.']);
+                }
                 $inkoopfactuur->update(['phase' => 'concept', 'approved_by' => null, 'approved_at' => null]);
                 break;
             case 'hold':
@@ -153,6 +157,7 @@ class PurchaseInvoiceController extends Controller
                 $inkoopfactuur->update(['on_hold' => true, 'hold_reason' => $data['hold_reason']]);
                 break;
             case 'vrijgeven':
+                abort_unless($user->can('inkoop.goedkeuren'), 403, 'Alleen wie inkoopfacturen mag goedkeuren, kan een factuur vrijgeven.');
                 $inkoopfactuur->update(['on_hold' => false, 'hold_reason' => null]);
                 break;
             default:
@@ -167,6 +172,7 @@ class PurchaseInvoiceController extends Controller
     {
         abort_unless($request->user()->can('inkoop.goedkeuren'), 403);
         abort_unless(in_array($inkoopfactuur->phase, ['akkoord', 'verwerkt'], true), 422, 'Registreer betalingen pas na goedkeuring.');
+        abort_if($inkoopfactuur->on_hold, 422, 'Deze inkoopfactuur staat on hold; geef hem eerst vrij.');
         $request->merge(['amount' => Bedragen::parse($request->input('amount'))]);
         $data = $request->validate([
             'date' => ['required', 'date'],

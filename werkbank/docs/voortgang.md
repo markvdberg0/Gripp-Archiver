@@ -153,7 +153,7 @@ Per fase: wat werkt aantoonbaar, hoe is het getest, welke beperkingen zijn er en
 
 **Hoe getest**
 
-- 107 tests (817 controles), nieuw: back-up en herstel met bestanden en veiligheidsback-up, weigeren van een gewijzigde back-up, controleren en opruimen, beheerpagina en padbeveiliging bij downloaden; debiteuren op peildatum met ouderdom (betaling na de peildatum telt niet mee), omzet per maand (concepten tellen niet), rechten op overzichten, CSV met formule-injectie, anonimiseren, memoriaal/kosten, overzichtsscherm per rol.
+- 107 tests (817 controles; na de codereview 118), nieuw: back-up en herstel met bestanden en veiligheidsback-up, weigeren van een gewijzigde back-up, controleren en opruimen, beheerpagina en padbeveiliging bij downloaden; debiteuren op peildatum met ouderdom (betaling na de peildatum telt niet mee), omzet per maand (concepten tellen niet), rechten op overzichten, CSV met formule-injectie, anonimiseren, memoriaal/kosten, overzichtsscherm per rol.
 - Echte gegevens: back-up 12 s, controle 2 s, herstel in een lege database 8 s met identieke aantallen en totalen; openstaande debiteuren gelijk aan het rapport van de back-uptool; som van de kosten gelijk aan de bron.
 
 **Beperkingen**
@@ -162,6 +162,20 @@ Per fase: wat werkt aantoonbaar, hoe is het getest, welke beperkingen zijn er en
 - De `APP_KEY` zit niet in de back-up; bewaar die apart.
 - Geen winst-en-verliesrekening, balans of btw-aangifte (geen boekhouding, aanname 1).
 - Verlof is niet overgenomen.
+
+## Codereview
+
+Na fase 6 is de code onafhankelijk gereviewd op rechten, bestanden, import, back-up/herstel en geldlogica. Opgelost (met regressietests in `tests/Feature/ReviewFixesTest.php`, 118 tests in totaal):
+
+- Vier-ogenprincipe was te omzeilen door een factuur eerst te wijzigen en dan goed te keuren; geldt nu ook voor de laatste wijziger. De drempel kan alleen nog door een beheerder worden gewijzigd.
+- Verwerkte of betaalde inkoopfacturen konden terug naar concept; vrijgeven van "on hold" kon zonder goedkeurrecht; betalingen op een factuur die on hold staat waren mogelijk.
+- Lokaal definitief verwijderde betalingen, regels en uren kwamen terug bij een volgende import; regels en betalingen werden bijgewerkt onder een lokaal gewijzigd document; afgeleide velden werden ook bij lokaal gewijzigde records ingevuld; id-koppelingen van een teruggedraaide importrij bleven bewaard.
+- Bijlagen en timeline-items bij (inkoop)facturen waren zichtbaar voor rollen zonder financiële rechten.
+- Dubbel klikken op "definitief maken" kon een gat in de factuurnummering geven; een factuur kon meerdere keren worden gecrediteerd; eigen uren konden zelf worden gefiatteerd.
+- "1.250" werd gelezen als 1,25 en "1,234.56" verkeerd; nu volgens een vaste regel (zie `Bedragen::parse`).
+- Herstel zet de gegevens nu in één transactie terug en noemt bij een fout de veiligheidsback-up; een back-up is één samenhangende momentopname; contractfacturatie kan niet twee keer tegelijk draaien; bestandsnamen met een schuine streep zijn weer te downloaden.
+
+Bewust niet gewijzigd: voor geïmporteerde inkoopfacturen is niet bekend wie ze in Gripp invoerde, dus het vier-ogenprincipe geldt pas na een wijziging in Werkbank. Bij een mislukt herstel op MariaDB/MySQL (geen transactionele schemawijzigingen) kan de database leeg achterblijven; zet dan de genoemde veiligheidsback-up terug.
 
 ## Eindstand en gelijkwaardigheid
 

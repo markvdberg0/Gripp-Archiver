@@ -140,13 +140,23 @@ class InvoiceController extends Controller
         if (! $factuur->company_id) {
             return back()->withErrors(['factuur' => 'Kies eerst een relatie.']);
         }
-        DB::transaction(function () use ($factuur, $request) {
-            $factuur->recalculate();
-            $factuur->finalize();
-            $factuur->timeline()->create(['type' => 'systeem', 'body' => "Factuur {$factuur->number} definitief gemaakt.", 'occurred_at' => now(), 'user_id' => $request->user()->id, 'company_id' => $factuur->company_id]);
-        });
+        $number = DB::transaction(function () use ($factuur, $request) {
+            // Opnieuw lezen en vergrendelen: een dubbele klik mag geen tweede nummer uitgeven.
+            $fresh = Invoice::query()->whereKey($factuur->id)->lockForUpdate()->firstOrFail();
+            if (! $fresh->isEditable()) {
+                return null;
+            }
+            $fresh->recalculate();
+            $fresh->finalize();
+            $fresh->timeline()->create(['type' => 'systeem', 'body' => "Factuur {$fresh->number} definitief gemaakt.", 'occurred_at' => now(), 'user_id' => $request->user()->id, 'company_id' => $fresh->company_id]);
 
-        return back()->with('status', "Factuur {$factuur->number} is definitief.");
+            return $fresh->number;
+        });
+        if ($number === null) {
+            return back()->with('warning', 'Deze factuur was al definitief gemaakt.');
+        }
+
+        return back()->with('status', "Factuur {$number} is definitief.");
     }
 
     public function storePayment(Request $request, Invoice $factuur): RedirectResponse
@@ -190,6 +200,10 @@ class InvoiceController extends Controller
     public function credit(Invoice $factuur): RedirectResponse
     {
         abort_if($factuur->isEditable(), 422, 'Een concept kun je gewoon wijzigen of verwijderen.');
+        abort_if($factuur->credit_of_id !== null, 422, 'Een creditfactuur kun je niet nogmaals crediteren.');
+        if ($existing = $factuur->credits()->first()) {
+            return redirect()->route('facturen.show', $existing)->withErrors(['factuur' => 'Deze factuur is al gecrediteerd (creditfactuur '.($existing->number ?? 'concept').'). Verwijder of wijzig die eerst.']);
+        }
         $credit = DB::transaction(function () use ($factuur) {
             $credit = Invoice::create(Arr::only($factuur->getAttributes(), ['company_id', 'contact_id', 'project_id', 'contract_id', 'client_reference', 'payment_method'])
                 + ['credit_of_id' => $factuur->id, 'subject' => "Creditering van factuur {$factuur->number}", 'status' => 'concept']);

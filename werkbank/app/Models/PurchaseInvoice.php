@@ -151,8 +151,9 @@ class PurchaseInvoice extends Model
             return 'Je hebt geen recht om inkoopfacturen goed te keuren.';
         }
         $threshold = (float) Setting::get('inkoop.vier_ogen_drempel', '2500');
-        if ($this->created_by === $user->id && abs((float) $this->total_incl) > $threshold) {
-            return 'Boven '.Format::euro($threshold).' moet iemand anders dan de invoerder goedkeuren (vier-ogenprincipe).';
+        // Wie de factuur heeft ingevoerd óf het laatst gewijzigd, mag hem boven de drempel niet zelf goedkeuren.
+        if (in_array($user->id, array_filter([$this->created_by, $this->updated_by]), true) && abs((float) $this->total_incl) > $threshold) {
+            return 'Boven '.Format::euro($threshold).' moet iemand anders dan de invoerder of de laatste wijziger goedkeuren (vier-ogenprincipe).';
         }
 
         return null;

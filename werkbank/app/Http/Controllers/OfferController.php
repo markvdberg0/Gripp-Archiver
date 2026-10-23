@@ -78,7 +78,7 @@ class OfferController extends Controller
     public function show(Offer $offerte): View
     {
         $offerte->load(['company', 'contact', 'phase', 'accountManager', 'files', 'tags', 'lines.unit', 'lines.vatRate', 'lines.product']);
-        $timeline = $offerte->timeline()->with(['employee', 'user', 'files'])->paginate(25);
+        $timeline = $offerte->timeline()->visibleTo(request()->user())->with(['employee', 'user', 'files'])->paginate(25);
 
         return view('offers.show', ['offer' => $offerte, 'timeline' => $timeline, 'vat' => $offerte->vatBreakdown(), 'related' => $this->related($offerte)]);
     }

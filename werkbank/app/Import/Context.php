@@ -59,7 +59,7 @@ final class Context
         // "BTW binnen EU 21%" / "buiten EU" / "verlegd": btw wordt berekend maar niet betaald (verlegd).
         $reverse = $pct > 0 && (bool) preg_match('/binnen\s*EU|buiten\s*EU|verlegd|import/i', $name);
         $rate = VatRate::create(['gripp_id' => $gid, 'name' => mb_substr($name, 0, 100), 'percentage' => $pct, 'kind' => $kind, 'reverse_charge' => $reverse, 'active' => true, 'gripp_synced_at' => now()]);
-        $this->maps[VatRate::class][$gid] = $rate->id;
+        $this->put(VatRate::class, $gid, $rate->id);
 
         return $rate->id;
     }
@@ -67,8 +67,39 @@ final class Context
     public function remember(Model $model): void
     {
         if (isset($this->maps[$model::class])) {
-            $this->maps[$model::class][(int) $model->gripp_id] = $model->getKey();
+            $this->put($model::class, (int) $model->gripp_id, $model->getKey());
         }
+    }
+
+    /** @var list<array{0: class-string, 1: int}>|null koppelingen die in de lopende rij nieuw zijn toegevoegd */
+    private ?array $rowJournal = null;
+
+    /** Een importrij begint (eigen savepoint). */
+    public function beginRow(): void
+    {
+        $this->rowJournal = [];
+    }
+
+    public function commitRow(): void
+    {
+        $this->rowJournal = null;
+    }
+
+    /** De rij is teruggedraaid: haal de koppelingen weg die in deze rij zijn toegevoegd. */
+    public function rollbackRow(): void
+    {
+        foreach ($this->rowJournal ?? [] as [$class, $gid]) {
+            unset($this->maps[$class][$gid]);
+        }
+        $this->rowJournal = null;
+    }
+
+    private function put(string $class, int $gid, int $id): void
+    {
+        if ($this->rowJournal !== null && ! isset($this->maps[$class][$gid])) {
+            $this->rowJournal[] = [$class, $gid];
+        }
+        $this->maps[$class][$gid] = $id;
     }
 
     public function count(string $entity, string $what, int $n = 1): void

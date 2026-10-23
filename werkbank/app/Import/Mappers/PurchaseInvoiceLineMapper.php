@@ -30,6 +30,11 @@ class PurchaseInvoiceLineMapper extends LineMapper
         return 'inkoop';
     }
 
+    protected function parentClass(): string
+    {
+        return PurchaseInvoice::class;
+    }
+
     protected function parentColumn(): string
     {
         return 'purchase_invoice_id';
@@ -61,7 +66,7 @@ class PurchaseInvoiceLineMapper extends LineMapper
         $check = $this->totalsCheck($invoices, $ctx, 'inkoopfacturen (met regels) waarvan regels optellen tot het totaal incl. btw', 'incl');
         foreach ($invoices as $invoice) {
             $t = $invoice->computeTotals();
-            if (! $ctx->dryRun) {
+            if (! $ctx->dryRun && ! $invoice->isLocallyModified()) {
                 $order = $invoice->lines->pluck('purchaseOrderLine.purchase_order_id')->filter()->countBy()->sortDesc()->keys()->first();
                 $project = $invoice->lines->whereNotNull('project_id')->countBy('project_id')->sortDesc()->keys()->first();
                 $excl = $invoice->lines->isNotEmpty() ? $t['excl'] : $invoice->total_incl;

@@ -39,9 +39,20 @@ class RestoreCommand extends Command
 
             return self::FAILURE;
         }
-        $result = Backup::restore($path, ! $this->option('zonder-veiligheidsbackup'));
-        if ($result['safety']) {
-            $this->line("Back-up van de toestand vóór het herstel: {$result['safety']}");
+        // Veiligheidsback-up hier maken, zodat de naam ook bij een mislukt herstel bekend is.
+        $safety = $this->option('zonder-veiligheidsbackup') ? null : Backup::create('voor-herstel');
+        if ($safety) {
+            $this->line("Back-up van de toestand vóór het herstel: {$safety}");
+        }
+        try {
+            Backup::restore($path, false);
+        } catch (Throwable $e) {
+            $this->error('Herstel mislukt: '.$e->getMessage());
+            if ($safety) {
+                $this->warn('Zet de vorige toestand terug met: php artisan werkbank:herstel '.basename($safety).' --zonder-veiligheidsbackup');
+            }
+
+            return self::FAILURE;
         }
         $this->info('Herstel voltooid.');
 

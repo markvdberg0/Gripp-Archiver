@@ -36,9 +36,9 @@
                 <form method="post" action="{{ route('inkoopfacturen.fase', [$invoice, 'goedkeuren']) }}" class="inline">@csrf<button class="btn btn-sm btn-primary" type="submit" @disabled($denial) title="{{ $denial }}">Goedkeuren</button></form>
             @endif
             @if ($invoice->phase === 'akkoord' && ! $invoice->on_hold)@can('inkoop.goedkeuren')<form method="post" action="{{ route('inkoopfacturen.fase', [$invoice, 'verwerken']) }}" class="inline">@csrf<button class="btn btn-sm" type="submit">Verwerken</button></form>@endcan @endif
-            @if ($invoice->phase !== 'concept')<form method="post" action="{{ route('inkoopfacturen.fase', [$invoice, 'terug']) }}" class="inline" data-confirm="Terugzetten naar concept? De goedkeuring vervalt.">@csrf<button class="btn btn-sm" type="submit">Terug naar concept</button></form>@endif
+            @if (in_array($invoice->phase, ['controle', 'akkoord']) && $invoice->payments->isEmpty())<form method="post" action="{{ route('inkoopfacturen.fase', [$invoice, 'terug']) }}" class="inline" data-confirm="Terugzetten naar concept? De goedkeuring vervalt.">@csrf<button class="btn btn-sm" type="submit">Terug naar concept</button></form>@endif
             @if ($invoice->on_hold)
-                <form method="post" action="{{ route('inkoopfacturen.fase', [$invoice, 'vrijgeven']) }}" class="inline">@csrf<button class="btn btn-sm" type="submit">Vrijgeven</button></form>
+                @can('inkoop.goedkeuren')<form method="post" action="{{ route('inkoopfacturen.fase', [$invoice, 'vrijgeven']) }}" class="inline">@csrf<button class="btn btn-sm" type="submit">Vrijgeven</button></form>@endcan
             @elseif ($invoice->phase !== 'verwerkt')
                 <form method="post" action="{{ route('inkoopfacturen.fase', [$invoice, 'hold']) }}" class="inline actions">@csrf<input type="text" name="hold_reason" placeholder="Reden on hold" aria-label="Reden on hold" style="width:200px" required><button class="btn btn-sm" type="submit">On hold</button></form>
             @endif

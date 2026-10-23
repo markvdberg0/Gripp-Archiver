@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\StoredFile;
+use App\Models\TimelineEntry;
 use App\Support\Attachables;
 use App\Support\Audit;
 use Illuminate\Http\RedirectResponse;
@@ -20,7 +21,8 @@ class FileController extends Controller
         abort_unless($bestand->hasContent(), 404, 'De inhoud van dit bestand ontbreekt.');
         $inline = in_array($bestand->mime_type, ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'text/plain'], true) && ! $request->boolean('download');
 
-        return Storage::disk('local')->response($bestand->path, $bestand->name, [
+        // Een / of \ in de bestandsnaam (mogelijk bij geïmporteerde namen) maakt de download-header ongeldig.
+        return Storage::disk('local')->response($bestand->path, strtr($bestand->name, ['/' => '_', '\\' => '_']), [
             'Content-Type' => $bestand->mime_type ?? 'application/octet-stream',
             'Content-Security-Policy' => "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox",
             'X-Content-Type-Options' => 'nosniff',
@@ -60,6 +62,10 @@ class FileController extends Controller
         $links = DB::table('attachments')->where('file_id', $file->id)->get(['attachable_type', 'attachable_id']);
         foreach ($links as $l) {
             $view = Attachables::MAP[$l->attachable_type][1] ?? null;
+            // Timeline-items bij facturen of inkoop vragen het financiële recht van dat document.
+            if ($l->attachable_type === 'timeline') {
+                $view = TimelineEntry::find($l->attachable_id)?->requiredAbility();
+            }
             if ($view && $request->user()->can($view)) {
                 return true;
             }

@@ -18,6 +18,14 @@ abstract class LineMapper extends Mapper
     /** Lokaal id van het document bij dit bronrecord. */
     abstract protected function parentId(array $row, Context $ctx): ?int;
 
+    /** @return class-string<Model> het documentmodel (Offer, Invoice, …) */
+    abstract protected function parentClass(): string;
+
+    public function parentConflict(array $row, Context $ctx): ?string
+    {
+        return $this->parentState($this->parentClass(), $this->parentId($row, $ctx));
+    }
+
     /** 'verkoop' of 'inkoop' (voor het aanmaken van btw-tarieven). */
     protected function vatKind(): string
     {

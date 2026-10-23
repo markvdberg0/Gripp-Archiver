@@ -97,7 +97,9 @@ final class Regels
             $line->fill($attrs)->save();
             $keep[] = $line->id;
         }
-        $relation->whereNotIn('id', $keep ?: [0])->delete();
+        // Per model verwijderen (niet in één query), zodat verwijderde Gripp-regels worden vastgelegd en een
+        // volgende import ze niet terugzet (zie FromGripp).
+        $existing->except($keep)->each->delete();
         $document->unsetRelation('lines');
     }
 

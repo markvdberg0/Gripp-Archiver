@@ -50,7 +50,11 @@ final class Bedragen
         return ['excl' => self::fmt($excl), 'vat' => self::fmt($vat), 'incl' => self::fmt($excl + $vat), 'per_rate' => $perRate];
     }
 
-    /** "1.234,56", "1234,56", "1234.56" of "-12" → "1234.56". Null bij lege invoer. */
+    /**
+     * "1.234,56", "1234,56", "1234.56", "1.250" (duizendtal), "1,234.56" of "-12" → "1234.56". Null bij lege invoer.
+     * Regel: het láátste scheidingsteken is het decimaalteken, behalve een punt gevolgd door precies drie cijfers
+     * in groepen ("1.250", "12.500.000"): dat is een duizendtalscheiding.
+     */
     public static function parse(mixed $input): ?string
     {
         if ($input === null || (is_string($input) && trim($input) === '')) {
@@ -60,8 +64,14 @@ final class Bedragen
             return (string) $input;
         }
         $s = str_replace([' ', '€', "\u{a0}"], '', trim((string) $input));
-        if (str_contains($s, ',')) {
-            $s = str_replace(['.', ','], ['', '.'], $s);
+        $comma = strrpos($s, ',');
+        $dot = strrpos($s, '.');
+        if ($comma !== false && ($dot === false || $comma > $dot)) {
+            $s = str_replace(['.', ','], ['', '.'], $s);       // 1.234,56
+        } elseif ($comma !== false) {
+            $s = str_replace(',', '', $s);                     // 1,234.56
+        } elseif (preg_match('/^-?\d{1,3}(\.\d{3})+$/', $s)) {
+            $s = str_replace('.', '', $s);                     // 1.250
         }
 
         return is_numeric($s) ? $s : (string) $input; // ongeldige invoer laten staan voor de validatie

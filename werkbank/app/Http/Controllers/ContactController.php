@@ -44,7 +44,7 @@ class ContactController extends Controller
     public function show(Contact $contactpersoon): View
     {
         $contactpersoon->load(['company', 'tags']);
-        $timeline = TimelineEntry::where('contact_id', $contactpersoon->id)->with(['employee', 'user', 'files'])->latest('occurred_at')->paginate(25);
+        $timeline = TimelineEntry::where('contact_id', $contactpersoon->id)->visibleTo(request()->user())->with(['employee', 'user', 'files'])->latest('occurred_at')->paginate(25);
 
         return view('contacts.show', ['contact' => $contactpersoon, 'timeline' => $timeline]);
     }

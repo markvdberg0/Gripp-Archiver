@@ -46,8 +46,13 @@ class SettingsController extends Controller
     {
         // Punten in veldnamen vervangen door __ (Laravel leest punten als geneste arrays).
         $rules = collect(self::RULES)->mapWithKeys(fn ($r, $k) => [str_replace('.', '__', $k) => $r])->all();
+        // De vier-ogendrempel controleert juist wie inkoopfacturen goedkeurt (administratie); alleen een
+        // beheerder mag hem wijzigen.
+        if (! $request->user()->can('beheer.gebruikers')) {
+            unset($rules['inkoop__vier_ogen_drempel']);
+        }
         $data = $request->validate($rules);
-        Setting::put(collect($data)->mapWithKeys(fn ($v, $k) => [str_replace('__', '.', $k) => $v ?? ''])->all());
+        Setting::put(collect($data)->only(array_keys($rules))->mapWithKeys(fn ($v, $k) => [str_replace('__', '.', $k) => $v ?? ''])->all());
 
         return redirect()->route('beheer.instellingen.edit')->with('status', 'Instellingen opgeslagen.');
     }

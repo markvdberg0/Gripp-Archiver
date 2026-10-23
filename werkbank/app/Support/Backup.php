@@ -60,19 +60,23 @@ final class Backup
             'tables' => [], 'files' => [],
         ];
         $scratch = [];
-        foreach (self::tables() as $table) {
-            $file = tempnam(sys_get_temp_dir(), 'wb');
-            $scratch[] = $file;
-            $out = fopen($file, 'wb');
-            $rows = 0;
-            foreach (DB::table($table)->cursor() as $row) {
-                fwrite($out, json_encode($row, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION)."\n");
-                $rows++;
+        // Alle tabellen in één leestransactie: een samenhangende momentopname, ook als er tijdens de
+        // back-up wordt gewerkt.
+        DB::transaction(function () use (&$scratch, &$manifest, $zip) {
+            foreach (self::tables() as $table) {
+                $file = tempnam(sys_get_temp_dir(), 'wb');
+                $scratch[] = $file;
+                $out = fopen($file, 'wb');
+                $rows = 0;
+                foreach (DB::table($table)->cursor() as $row) {
+                    fwrite($out, json_encode($row, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION)."\n");
+                    $rows++;
+                }
+                fclose($out);
+                $zip->addFile($file, "database/{$table}.jsonl");
+                $manifest['tables'][$table] = ['rows' => $rows, 'sha256' => hash_file('sha256', $file)];
             }
-            fclose($out);
-            $zip->addFile($file, "database/{$table}.jsonl");
-            $manifest['tables'][$table] = ['rows' => $rows, 'sha256' => hash_file('sha256', $file)];
-        }
+        });
 
         $disk = Storage::disk('local');
         foreach ($disk->allFiles('bestanden') as $rel) {
@@ -143,8 +147,10 @@ final class Backup
         $paths = array_map(fn ($m) => database_path("migrations/{$m}.php"), $manifest['migrations']);
         Artisan::call('migrate', ['--force' => true, '--path' => $paths, '--realpath' => true]);
 
-        // 2. Gegevens terugzetten.
+        // 2. Gegevens terugzetten, in één transactie: mislukt een rij, dan blijft geen half gevulde database achter
+        //    (wel een lege; zet dan de veiligheidsback-up terug).
         Schema::disableForeignKeyConstraints();
+        DB::beginTransaction();
         try {
             foreach (array_keys($manifest['tables']) as $table) {
                 if (! Schema::hasTable($table)) {
@@ -167,6 +173,10 @@ final class Backup
                 }
                 fclose($stream);
             }
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw new RuntimeException('Terugzetten van de gegevens is mislukt: '.$e->getMessage(), 0, $e);
         } finally {
             Schema::enableForeignKeyConstraints();
         }

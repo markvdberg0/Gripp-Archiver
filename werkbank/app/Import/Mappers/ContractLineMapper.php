@@ -21,6 +21,11 @@ class ContractLineMapper extends LineMapper
         return ContractLine::class;
     }
 
+    protected function parentClass(): string
+    {
+        return Contract::class;
+    }
+
     protected function parentColumn(): string
     {
         return 'contract_id';
@@ -40,7 +45,7 @@ class ContractLineMapper extends LineMapper
     public function checks(Context $ctx): array
     {
         if (! $ctx->dryRun) {
-            foreach (Contract::whereNotNull('gripp_id')->with('lines')->get() as $contract) {
+            foreach (Contract::whereNotNull('gripp_id')->with('lines')->get()->reject->isLocallyModified() as $contract) {
                 $t = $contract->computeTotals();
                 DB::table('contracts')->where('id', $contract->id)->update(['total_excl' => $t['excl'], 'total_vat' => $t['vat'], 'total_incl' => $t['incl']]);
             }

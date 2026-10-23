@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\Contract;
 use App\Models\Invoice;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -17,15 +18,24 @@ final class ContractFacturatie
     public static function run(?CarbonInterface $on = null): array
     {
         $on ??= today();
-        $made = [];
-        foreach (Contract::with(['lines', 'company'])->where('status', 'actief')->whereNotNull('next_invoice_date')->whereDate('next_invoice_date', '<=', $on)->get() as $contract) {
-            // Inhalen als er meerdere periodes achterstallig zijn, maar nooit meer dan 24 tegelijk.
-            for ($i = 0; $i < 24 && $contract->isDue($on); $i++) {
-                $made[] = self::invoice($contract);
-            }
+        // Nooit twee runs tegelijk (geplande taak en knop): anders ontstaan dubbele facturen voor één periode.
+        $lock = Cache::lock('werkbank:contracten-factureren', 600);
+        if (! $lock->get()) {
+            return [];
         }
+        try {
+            $made = [];
+            foreach (Contract::with(['lines', 'company'])->where('status', 'actief')->whereNotNull('next_invoice_date')->whereDate('next_invoice_date', '<=', $on)->get() as $contract) {
+                // Inhalen als er meerdere periodes achterstallig zijn, maar nooit meer dan 24 tegelijk.
+                for ($i = 0; $i < 24 && $contract->isDue($on); $i++) {
+                    $made[] = self::invoice($contract);
+                }
+            }
 
-        return $made;
+            return $made;
+        } finally {
+            $lock->release();
+        }
     }
 
     public static function invoice(Contract $contract): Invoice

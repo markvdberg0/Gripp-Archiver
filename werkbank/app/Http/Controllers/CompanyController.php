@@ -55,7 +55,7 @@ class CompanyController extends Controller
     public function show(Request $request, Company $relatie): View
     {
         $relatie->load(['accountManager', 'tags', 'files', 'contacts']);
-        $timeline = $relatie->timeline()->with(['employee', 'user', 'files'])->paginate(25, ['*'], 'tl')->withQueryString();
+        $timeline = $relatie->timeline()->visibleTo($request->user())->with(['employee', 'user', 'files'])->paginate(25, ['*'], 'tl')->withQueryString();
 
         return view('companies.show', ['company' => $relatie, 'timeline' => $timeline, 'related' => $this->related($relatie)]);
     }

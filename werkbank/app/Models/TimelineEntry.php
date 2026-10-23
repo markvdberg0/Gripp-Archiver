@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\FromGripp;
 use App\Models\Concerns\HasAttachments;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -57,6 +58,29 @@ class TimelineEntry extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /** Recht dat nodig is om dit item (en de bijlagen) te zien: items bij facturen of inkoop zijn financieel. */
+    public function requiredAbility(): string
+    {
+        return match (true) {
+            $this->purchase_invoice_id !== null || $this->purchase_order_id !== null => 'inkoop.bekijken',
+            $this->invoice_id !== null || $this->contract_id !== null => 'facturen.bekijken',
+            default => 'relaties.bekijken',
+        };
+    }
+
+    /** Alleen items die deze gebruiker mag zien. */
+    public function scopeVisibleTo(Builder $q, User $user): Builder
+    {
+        if (! $user->can('inkoop.bekijken')) {
+            $q->whereNull('purchase_invoice_id')->whereNull('purchase_order_id');
+        }
+        if (! $user->can('facturen.bekijken')) {
+            $q->whereNull('invoice_id')->whereNull('contract_id');
+        }
+
+        return $q;
     }
 
     public function authorName(): string

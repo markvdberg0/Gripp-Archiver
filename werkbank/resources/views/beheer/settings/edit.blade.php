@@ -45,7 +45,11 @@
                 </div>
             </fieldset>
             <fieldset><legend>Inkoop</legend>
-                <x-veld name="inkoop__vier_ogen_drempel" label="Vier-ogendrempel (€ incl. btw)" type="number" step="0.01" :value="$values['inkoop__vier_ogen_drempel']" required hint="Boven dit bedrag moet iemand anders dan de invoerder de inkoopfactuur goedkeuren. 0 = altijd." />
+                @can('beheer.gebruikers')
+                    <x-veld name="inkoop__vier_ogen_drempel" label="Vier-ogendrempel (€ incl. btw)" type="number" step="0.01" :value="$values['inkoop__vier_ogen_drempel']" required hint="Boven dit bedrag moet iemand anders dan de invoerder of laatste wijziger de inkoopfactuur goedkeuren. 0 = altijd." />
+                @else
+                    <p class="small">Vier-ogendrempel: € {{ $values['inkoop__vier_ogen_drempel'] }} incl. btw. Alleen een beheerder kan dit wijzigen.</p>
+                @endcan
             </fieldset>
         </div>
     </div>

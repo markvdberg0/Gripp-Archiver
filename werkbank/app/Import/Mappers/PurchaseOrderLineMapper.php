@@ -30,6 +30,11 @@ class PurchaseOrderLineMapper extends LineMapper
         return 'inkoop';
     }
 
+    protected function parentClass(): string
+    {
+        return PurchaseOrder::class;
+    }
+
     protected function parentColumn(): string
     {
         return 'purchase_order_id';
@@ -58,7 +63,7 @@ class PurchaseOrderLineMapper extends LineMapper
         $check = $this->totalsCheck($orders, $ctx, 'inkoopopdrachten waarvan regels optellen tot het totaal');
         foreach ($orders as $order) {
             $t = $order->computeTotals();
-            if (! $ctx->dryRun) {
+            if (! $ctx->dryRun && ! $order->isLocallyModified()) {
                 $project = $order->project_id ?? $order->lines->whereNotNull('project_id')->countBy('project_id')->sortDesc()->keys()->first();
                 DB::table('purchase_orders')->where('id', $order->id)->update(['total_vat' => $t['vat'], 'total_incl' => (float) $order->total_excl + (float) $t['vat'], 'project_id' => $project]);
             }

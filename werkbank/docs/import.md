@@ -35,6 +35,8 @@ Zonder pad wordt `WERKBANK_IMPORT_PATH` gebruikt.
 - **Geen duplicaten.** Elk record houdt zijn Gripp-id (`gripp_id`). Een tweede import vindt hetzelfde record terug.
 - **Ongewijzigd wordt overgeslagen.** Werkbank bewaart een hash van het bronrecord; is die gelijk, dan gebeurt er niets.
 - **Lokale wijzigingen gaan voor.** Heb je een record in Werkbank gewijzigd of verwijderd na de vorige import, dan neemt de import een nieuwe versie uit Gripp niet over. Het rapport meldt dit als *conflict*.
+- **Lokaal verwijderd blijft verwijderd.** Ook definitief verwijderde regels, betalingen en uren worden vastgelegd en niet opnieuw aangemaakt.
+- **Regels en betalingen volgen hun document.** Is een offerte, opdracht, factuur of inkoopdocument in Werkbank gewijzigd, dan worden ook de regels en betalingen eronder niet meer vanuit Gripp bijgewerkt (conflict in het rapport), zodat regels en totalen bij elkaar blijven passen.
 - **Niets wordt verwijderd.** Staat een record niet meer in de back-up, dan blijft het in Werkbank bestaan; het rapport noemt het aantal.
 - **Alles of niets.** De import is één databasetransactie. Mislukt er onderweg iets ernstigs, dan verandert er niets. Fouten in losse records worden gemeld en overgeslagen.
 - **Bijlagen** worden gekopieerd naar de eigen opslag en ontdubbeld op inhoud (SHA-256). Ontbreekt een bestand in het archief, dan blijft het record bestaan "zonder inhoud".

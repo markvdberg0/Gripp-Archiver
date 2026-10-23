@@ -46,6 +46,39 @@ abstract class Mapper
         return '';
     }
 
+    /**
+     * Reden om dit record niet bij te werken omdat het bovenliggende document in Werkbank is gewijzigd
+     * of verwijderd (voor regels en betalingen), of null.
+     */
+    public function parentConflict(array $row, Context $ctx): ?string
+    {
+        return null;
+    }
+
+    /** @var array<string, ?string> cache: klasse#id → reden of null */
+    private array $parentState = [];
+
+    /** Hulp voor parentConflict(): controleert het document met dit lokale id. */
+    protected function parentState(string $class, ?int $id): ?string
+    {
+        if ($id === null) {
+            return null;
+        }
+
+        return $this->parentState[$class.'#'.$id] ??= (function () use ($class, $id) {
+            $query = $class::query();
+            if (method_exists($class, 'bootSoftDeletes')) {
+                $query->withTrashed();
+            }
+            $parent = $query->find($id);
+            if (! $parent || (method_exists($parent, 'trashed') && $parent->trashed())) {
+                return 'Het document is in Werkbank verwijderd; regel/betaling niet bijgewerkt.';
+            }
+
+            return $parent->isLocallyModified() ? "Het document ({$parent->auditLabel()}) is in Werkbank gewijzigd; regel/betaling uit Gripp niet overgenomen." : null;
+        })() ?? '';
+    }
+
     /** Het deel van het bronrecord dat in de hash gaat. */
     public function hashRow(array $row): array
     {

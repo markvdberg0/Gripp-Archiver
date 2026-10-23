@@ -34,6 +34,11 @@ class OfferLineMapper extends LineMapper
         return $discr !== null ? $discr === 'offerte' : $ctx->id(Offer::class, $base) !== null;
     }
 
+    protected function parentClass(): string
+    {
+        return Offer::class;
+    }
+
     protected function parentColumn(): string
     {
         return 'offer_id';

@@ -12,6 +12,10 @@ Elke gebruiker heeft één rol. De rechten per rol staan vast in de code ([app/S
 | Medewerker | Bekijken van relaties, offertes en opdrachten; eigen uren en taken. |
 | Alleen lezen | Alles bekijken behalve beheer; niets wijzigen. |
 
+**Inkoopfacturen goedkeuren (vier-ogenprincipe):** boven de drempel mag niemand goedkeuren die de factuur heeft ingevoerd of als laatste heeft gewijzigd. Alleen een beheerder kan de drempel wijzigen (de administratie, die zelf goedkeurt, niet). Vrijgeven van een factuur die on hold staat en betalingen registreren vragen het goedkeurrecht; een verwerkte of (deels) betaalde factuur kan niet meer terug naar concept. Voor geïmporteerde inkoopfacturen is niet bekend wie ze in Gripp invoerde; daar geldt de regel pas zodra iemand ze in Werkbank wijzigt.
+
+**Uren:** eigen uren kun je niet zelf fiatteren.
+
 Er moet altijd minstens één actieve beheerder zijn. Een beheerder kan zijn eigen rol niet wijzigen en zichzelf niet deactiveren.
 
 ## Inloggen
@@ -31,7 +35,7 @@ Elke wijziging aan relaties, contactpersonen, medewerkers, gebruikers, producten
 
 - **Dataminimalisatie:** van medewerkers worden geen BSN, bankgegevens, privéadressen of gezinsleden opgeslagen, ook niet bij de import uit Gripp (die velden staan in de back-up maar worden overgeslagen en niet eens gehasht).
 - **Bankgegevens van relaties** zijn alleen zichtbaar en wijzigbaar met het recht "Bankgegevens van relaties" (beheerder en administratie).
-- **Bestanden** staan buiten de webroot en zijn alleen te downloaden door gebruikers die een record mogen zien waar het bestand aan hangt. Ze worden met een strikte Content-Security-Policy en `sandbox` geserveerd.
+- **Bestanden** staan buiten de webroot en zijn alleen te downloaden door gebruikers die een record mogen zien waar het bestand aan hangt. Timeline-items (en hun bijlagen) die bij een verkoopfactuur of contract horen zijn alleen zichtbaar met het recht op facturen; items bij inkoop alleen met het recht op inkoop. Ze worden met een strikte Content-Security-Policy en `sandbox` geserveerd.
 - **HTML uit e-mails** (geïmporteerde timeline) wordt opgeschoond met `symfony/html-sanitizer`: geen scripts, formulieren, stijlen of externe afbeeldingen.
 - **Beveiligingsheaders:** Content-Security-Policy zonder externe bronnen en zonder inline scripts, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, en HSTS bij https.
 - Werkbank stuurt geen gegevens naar derden en heeft geen telemetrie.

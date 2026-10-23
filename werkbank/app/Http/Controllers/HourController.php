@@ -88,6 +88,10 @@ class HourController extends Controller
     {
         $data = $request->validate(['ids' => ['required', 'array'], 'ids.*' => ['integer'], 'actie' => ['required', 'in:fiatteren,afwijzen']]);
         $query = Hour::whereIn('id', $data['ids'])->where('status', 'definitief');
+        // Eigen uren fiatteert iemand anders.
+        if ($data['actie'] === 'fiatteren' && ($me = $request->user()->employee?->id)) {
+            $query->where('employee_id', '!=', $me);
+        }
         $n = $data['actie'] === 'fiatteren'
             ? $query->update(['status' => 'gefiatteerd', 'approved_by' => $request->user()->employee?->id, 'approved_at' => now(), 'updated_at' => now()])
             : $query->update(['status' => 'concept', 'updated_at' => now()]);

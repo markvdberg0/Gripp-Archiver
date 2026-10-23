@@ -143,6 +143,8 @@ final class Importer
             $ctx->issue($entity, null, 'ontbreekt', "Tabel {$mapper->entity()} staat niet in deze snapshot (geen leesrechten in Gripp?).");
         }
         $existing = ($softDeletes ? $class::withTrashed() : $class::query())->whereNotNull('gripp_id')->get()->keyBy('gripp_id');
+        // Lokaal definitief verwijderde records (zie FromGripp): niet opnieuw aanmaken.
+        $tombstones = DB::table('gripp_tombstones')->where('model', (new $class)->getMorphClass())->pluck('gripp_id')->flip();
         $seen = [];
 
         foreach ($rows as $row) {
@@ -161,7 +163,7 @@ final class Importer
 
                 continue;
             }
-            if ($model && $softDeletes && $model->trashed()) {
+            if (($model && $softDeletes && $model->trashed()) || (! $model && isset($tombstones[$gid]))) {
                 $ctx->count($entity, 'conflicts');
                 $ctx->issue($entity, $gid, 'conflict', 'In Werkbank verwijderd; niet hersteld.');
 
@@ -173,7 +175,16 @@ final class Importer
 
                 continue;
             }
+            // Regels en betalingen niet bijwerken onder een document dat in Werkbank is gewijzigd:
+            // anders kloppen regels en totalen van dat document niet meer met elkaar.
+            if ($reason = $mapper->parentConflict($row, $ctx)) {
+                $ctx->count($entity, 'conflicts');
+                $ctx->issue($entity, $gid, 'conflict', $reason);
 
+                continue;
+            }
+
+            $ctx->beginRow();
             try {
                 DB::transaction(function () use ($mapper, $row, $ctx, $class, $model, $gid, $hash, $entity) {
                     $attrs = $mapper->map($row, $ctx);
@@ -197,10 +208,14 @@ final class Importer
                     $mapper->after($model, $row, $ctx);
                     $ctx->count($entity, $isNew ? 'created' : 'updated');
                 });
+                $ctx->commitRow();
             } catch (ImportSkip $e) {
+                $ctx->rollbackRow();
                 $ctx->count($entity, 'skipped');
                 $ctx->issue($entity, $gid, 'overgeslagen', $e->getMessage());
             } catch (Throwable $e) {
+                // De rij is teruggedraaid; id-koppelingen uit deze rij mogen dan ook niet blijven staan.
+                $ctx->rollbackRow();
                 $ctx->count($entity, 'errors');
                 $ctx->issue($entity, $gid, 'fout', $e->getMessage());
             }
