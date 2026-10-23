@@ -1,0 +1,79 @@
+# Werkbank (Laravel): tests op de ondersteunde PHP-versies, tegen SQLite, MariaDB en PostgreSQL,
+# plus het Docker-image bouwen en starten (rooktest op /up en de inlogpagina).
+name: Werkbank
+
+on:
+  push:
+    paths: ['werkbank/**', '.github/workflows/werkbank.yml']
+  pull_request:
+    paths: ['werkbank/**', '.github/workflows/werkbank.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: werkbank
+
+jobs:
+  test:
+    name: PHP ${{ matrix.php }} · ${{ matrix.db }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3', '8.4', '8.5']
+        db: [sqlite]
+        include:
+          - { php: '8.4', db: mariadb }
+          - { php: '8.4', db: pgsql }
+    services:
+      mariadb:
+        image: ${{ matrix.db == 'mariadb' && 'mariadb:11.4' || '' }}
+        env: { MARIADB_DATABASE: werkbank, MARIADB_USER: werkbank, MARIADB_PASSWORD: werkbank, MARIADB_RANDOM_ROOT_PASSWORD: 'yes' }
+        ports: ['3306:3306']
+        options: --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=5s --health-retries=20
+      postgres:
+        image: ${{ matrix.db == 'pgsql' && 'postgres:17' || '' }}
+        env: { POSTGRES_DB: werkbank, POSTGRES_USER: werkbank, POSTGRES_PASSWORD: werkbank }
+        ports: ['5432:5432']
+        options: --health-cmd=pg_isready --health-interval=5s --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: pdo_sqlite, pdo_mysql, pdo_pgsql, intl, zip, gd, bcmath
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Tests
+        env:
+          DB_CONNECTION: ${{ matrix.db }}
+          DB_HOST: 127.0.0.1
+          DB_PORT: ${{ matrix.db == 'pgsql' && '5432' || '3306' }}
+          DB_DATABASE: ${{ matrix.db == 'sqlite' && ':memory:' || 'werkbank' }}
+          DB_USERNAME: werkbank
+          DB_PASSWORD: werkbank
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan test
+      - run: vendor/bin/pint --test
+
+  docker:
+    name: Docker-image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t werkbank:ci .
+      - name: Starten en rooktest
+        run: |
+          KEY="base64:$(openssl rand -base64 32)"
+          docker run -d --name wb -p 8080:80 -e APP_KEY="$KEY" -e APP_URL=http://localhost:8080 -e WERKBANK_MIGRATE=true werkbank:ci
+          for i in $(seq 1 30); do curl -fsS http://localhost:8080/up && break; sleep 2; done
+          curl -fsS http://localhost:8080/inloggen | grep -q "Inloggen"
+          docker exec wb php artisan werkbank:gebruiker ci@example.test
+          docker logs wb
