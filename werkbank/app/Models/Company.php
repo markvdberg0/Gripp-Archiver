@@ -52,6 +52,11 @@ class Company extends Model
         return $this->hasMany(Offer::class);
     }
 
+    public function projects(): HasMany
+    {
+        return $this->hasMany(Project::class);
+    }
+
     public function roleLabels(): array
     {
         return array_values(array_filter(self::ROLLEN, fn ($label, $field) => $this->{$field}, ARRAY_FILTER_USE_BOTH));

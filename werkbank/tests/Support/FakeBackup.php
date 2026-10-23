@@ -112,6 +112,26 @@ class FakeBackup
                 // hoort bij een opdracht, niet bij een offerte
                 ['id' => 900, 'offerprojectbase' => $r(901, '', 'opdracht'), 'rowtype' => $r(1, 'NORMAAL'), 'additionalsubject' => 'Uitvoering', 'amount' => 10, 'sellingprice' => '100.00', 'discount' => 0, 'vat' => $r(27, 'BTW 21%'), '_ordering' => 0],
             ],
+            // Fase 3
+            'projectphase' => [['id' => 1, 'name' => 'Werkvoorbereiding', '_ordering' => 1], ['id' => 2, 'name' => 'Uitvoering', '_ordering' => 2]],
+            'project' => [
+                ['id' => 901, 'number' => 890140, 'name' => 'Compactstation Zwolle', 'company' => $r(1, 'Bakker', 'bedrijf'), 'phase' => $r(2), 'accountmanager' => $r(100),
+                    'startdate' => $d('2025-06-01'), 'deadline' => $d('2025-09-01'), 'totalexclvat' => '1000.00', 'totalinclvat' => '1210.00', 'employees' => [$r(100), $r(103)],
+                    'customfield_materiaalplanning' => 'week 30', 'workdeliveraddress' => 'Industrieweg 5, Zwolle'],
+            ],
+            'tasktype' => [['id' => 1, 'name' => 'Montage', '_ordering' => 0]],
+            'taskphase' => [['id' => 1, 'name' => 'Open', '_ordering' => 0]],
+            'task' => [
+                ['id' => 31, 'number' => 1001, 'content' => 'Kabel afroepen', 'type' => $r(1), 'phase' => $r(1), 'company' => $r(1), 'offerprojectbase' => $r(901, '', 'opdracht'),
+                    'preferredemployee' => $r(103), 'deadlinedate' => $d('2025-08-01'), 'deadlinetime' => $d('1970-01-01 14:30:00'), 'estimatedhours' => 2, 'isafgerond' => false],
+            ],
+            'calendaritem' => [
+                ['id' => 41, 'calendaritememployee' => $r(103), 'task' => $r(31), 'date' => $d('2025-07-30'), 'time' => $d('1970-01-01 09:00:00'), 'hours' => 1.5, 'subject' => 'Kabel afroepen'],
+            ],
+            'hour' => [
+                ['id' => 51, 'date' => $d('2025-07-01'), 'employee' => $r(100), 'offerprojectbase' => $r(901, '', 'opdracht'), 'offerprojectline' => $r(900), 'amount' => 8, 'status' => $r(3, 'Gefiatteerd'), 'authorizedby' => $r(103), 'authorizedon' => $d('2025-07-05'), 'description' => 'Montage'],
+                ['id' => 52, 'date' => $d('2025-07-02'), 'employee' => $r(100), 'offerprojectbase' => $r(901, '', 'opdracht'), 'amount' => 2, 'status' => $r(1, 'Concept')],
+            ],
             'timelineentry' => [
                 ['id' => 501, 'company' => $r(1), 'contact' => $r(11), 'employee' => $r(103, 'Anna de Vries'), 'timelinetype' => $r(4, 'RECEIVEDEMAIL'), 'date' => $d('2026-09-22 10:15:00'),
                     'subject' => 'Aanvraag', 'message' => '<p>Graag een <b>offerte</b><script>alert(1)</script><img src="https://evil.test/x.png"></p>', 'files' => [$r(9002, 'mail.pdf')]],

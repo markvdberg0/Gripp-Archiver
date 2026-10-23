@@ -64,6 +64,11 @@ class Offer extends Model
         return $this->hasMany(TimelineEntry::class)->latest('occurred_at');
     }
 
+    public function projects(): HasMany
+    {
+        return $this->hasMany(Project::class);
+    }
+
     /** Samengevatte status voor weergave en filters. */
     public function state(): string
     {

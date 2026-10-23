@@ -60,7 +60,7 @@ class CompanyController extends Controller
         $out = [];
         foreach (['offers' => 'offertes.bekijken', 'projects' => 'opdrachten.bekijken', 'invoices' => 'facturen.bekijken', 'purchaseOrders' => 'inkoop.bekijken', 'purchaseInvoices' => 'inkoop.bekijken'] as $rel => $ability) {
             if (method_exists($company, $rel) && auth()->user()->can($ability)) {
-                $out[$rel] = $company->{$rel}()->latest('date')->limit(10)->get();
+                $out[$rel] = $company->{$rel}()->latest($rel === 'projects' ? 'number' : 'date')->limit(10)->get();
             }
         }
 

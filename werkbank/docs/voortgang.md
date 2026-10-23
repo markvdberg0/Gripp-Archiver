@@ -57,3 +57,28 @@ Per fase: wat werkt aantoonbaar, hoe is het getest, welke beperkingen zijn er en
 - Voorraadbeheer: de Gripp-velden (voorraad, drempelwaarde) zijn zichtbaar als vrije velden, maar er is geen voorraadlogica.
 
 **Volgende stap:** fase 3, opdrachten, taken en uren.
+
+## Fase 3 — Opdrachten, taken, planning en uren
+
+**Wat werkt**
+
+- Opdrachten: lijst met filters, fase, deadline-signalering en geschreven uren; aanmaken en wijzigen met regels (begroting) en medewerkers; **opdracht maken uit een geaccepteerde offerte** (gegevens, regels en bijlagen gaan mee, één opdracht per offerte, offerte daarna niet meer te heropenen); opdrachtbevestiging als PDF; archiveren; verwijderen alleen zonder uren.
+- Opdrachtdetail met uren per medewerker (geschreven/gefiatteerd) en per regel (geschreven tegenover begrote uren), taken, bestanden en timeline.
+- Taken: mijn taken / iedereen, open/afgerond, te-laat-signalering, afronden en heropenen, inplannen als agenda-item.
+- Planning: weekoverzicht van agenda-items per medewerker per dag; los inplannen.
+- Uren: weekstaat per medewerker, uren toevoegen op opdracht en (optioneel) regel, week indienen (concept → definitief), fiatteren of terugzetten door iemand met het recht "uren fiatteren"; gefiatteerde en ingediende uren zijn niet meer te wijzigen; je kunt alleen eigen uren wijzigen (tenzij je mag fiatteren).
+- Import: opdrachtfasen, opdrachten (medewerkers, vrije velden, Gripp-PDF), opdrachtregels (gescheiden van offerteregels), taaksoorten en -fasen, taken, agenda-items en uren (met status en fiattering); timeline gekoppeld aan opdrachten en taken.
+
+**Hoe getest**
+
+- 75 tests (555 controles), nieuw: opdracht uit offerte (eenmalig, vergrendeling offerte), handmatige opdracht met validatie, verwijderen vs archiveren, volledige urenflow (schrijven met komma-notatie, validatie, indienen, fiatteren, rechten op andermans uren), taken en planning, rechten voor alleen lezen; import van alle nieuwe onderdelen en herhaalde import.
+- Browser: opdrachtenlijst, opdrachtdetail, planning met echte agenda-items, takenlijst, fiatteerscherm.
+- Echte back-up: 34 opdrachten (som van de totalen gelijk aan de bron, regels van alle 34 tellen op tot het totaal), 616 opdrachtregels, 6 taken, 157 agenda-items, 12 urenregels (33,00 uur gelijk aan de bron).
+
+**Beperkingen**
+
+- Geen agenda-koppeling (iCal/Outlook) en geen sleep-en-zet-planning; de planning is een overzicht met invoer.
+- Geen kostprijs/uurtarief per medewerker, dus nog geen nacalculatie in euro's (alleen uren).
+- Verlof (Gripp: absencerequest, 3 records) is nog niet overgenomen.
+
+**Volgende stap:** fase 4, verkoopfacturen.

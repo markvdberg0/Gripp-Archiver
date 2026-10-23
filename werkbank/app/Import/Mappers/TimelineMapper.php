@@ -9,6 +9,8 @@ use App\Models\Company;
 use App\Models\Contact;
 use App\Models\Employee;
 use App\Models\Offer;
+use App\Models\Project;
+use App\Models\Task;
 use App\Models\TimelineEntry;
 use Illuminate\Database\Eloquent\Model;
 
@@ -18,7 +20,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class TimelineMapper extends Mapper
 {
-    public const VERSION = 2;
+    public const VERSION = 3;
 
     public function entity(): string
     {
@@ -35,6 +37,8 @@ class TimelineMapper extends Mapper
     {
         return [
             'offer' => ['offer_id', Offer::class],
+            'project' => ['project_id', Project::class],
+            'task' => ['task_id', Task::class],
         ];
     }
 

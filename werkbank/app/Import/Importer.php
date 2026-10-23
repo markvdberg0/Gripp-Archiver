@@ -37,6 +37,14 @@ final class Importer
         Mappers\OfferPhaseMapper::class,
         Mappers\OfferMapper::class,
         Mappers\OfferLineMapper::class,
+        Mappers\ProjectPhaseMapper::class,
+        Mappers\ProjectMapper::class,
+        Mappers\ProjectLineMapper::class,
+        Mappers\TaskTypeMapper::class,
+        Mappers\TaskPhaseMapper::class,
+        Mappers\TaskMapper::class,
+        Mappers\CalendarItemMapper::class,
+        Mappers\HourMapper::class,
         Mappers\TimelineMapper::class,
     ];
 

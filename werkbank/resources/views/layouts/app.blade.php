@@ -22,6 +22,7 @@
         ],
         'Planning' => [
             ['taken.index', 'Taken', 'opdrachten.bekijken', 'taken.*'],
+            ['planning.index', 'Planning', 'opdrachten.bekijken', 'planning.*'],
             ['uren.index', 'Uren', 'uren.schrijven', 'uren.*'],
         ],
         'Financieel' => [
