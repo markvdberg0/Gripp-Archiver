@@ -34,6 +34,11 @@ class TimelineEntry extends Model
         return $this->belongsTo(Contact::class);
     }
 
+    public function offer(): BelongsTo
+    {
+        return $this->belongsTo(Offer::class);
+    }
+
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);

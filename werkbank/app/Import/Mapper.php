@@ -16,6 +16,18 @@ abstract class Mapper
     /** Naam van de Gripp-entiteit (bestandsnaam in raw/). */
     abstract public function entity(): string;
 
+    /** Naam in rapport en bij --alleen. Standaard de Gripp-entiteit; anders als één bronbestand over meerdere modellen gaat. */
+    public function key(): string
+    {
+        return $this->entity();
+    }
+
+    /** Hoort dit bronrecord bij deze mapper? (bv. offerteregels vs. opdrachtregels in hetzelfde bestand) */
+    public function accepts(array $row, Context $ctx): bool
+    {
+        return true;
+    }
+
     /** @return class-string<Model> */
     abstract public function model(): string;
 
@@ -53,7 +65,7 @@ abstract class Mapper
      */
     public function checks(Context $ctx): array
     {
-        $source = count($ctx->snapshot->rows($this->entity()));
+        $source = count(array_filter($ctx->snapshot->rows($this->entity()), fn ($r) => $this->accepts($r, $ctx)));
         $class = $this->model();
         $q = $class::query()->whereNotNull('gripp_id');
         if (method_exists($class, 'bootSoftDeletes')) {
@@ -61,7 +73,7 @@ abstract class Mapper
         }
         $local = $q->count();
 
-        return [['label' => $this->entity().': aantal records', 'source' => $source, 'local' => $local, 'ok' => $source === $local]];
+        return [['label' => $this->key().': aantal records', 'source' => $source, 'local' => $local, 'ok' => $source === $local]];
     }
 
     /** Bijlagen (veld files e.d.) koppelen aan het model. */
@@ -80,6 +92,17 @@ abstract class Mapper
             }
         }
         $model->files()->wherePivot('role', 'bijlage')->syncWithoutDetaching($ids);
+    }
+
+    /** Een document-PDF uit het archief (offerte, opdracht, factuur) koppelen met rol "document". */
+    protected function attachDocument(Model $model, ?array $info, string $name, Context $ctx): void
+    {
+        if ($ctx->dryRun || ! $info) {
+            return;
+        }
+        if ($file = $ctx->storeArchived($info, $name)) {
+            $model->files()->wherePivot('role', 'document')->syncWithoutDetaching([$file->id => ['role' => 'document', 'created_at' => now()]]);
+        }
     }
 
     protected function syncTags(Model $model, array $row, Context $ctx): void

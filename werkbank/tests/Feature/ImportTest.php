@@ -113,7 +113,7 @@ class ImportTest extends TestCase
         $this->assertSame($counts, [Company::count(), Contact::count(), TimelineEntry::count(), StoredFile::count(), Tag::count(), DB::table('attachments')->count(), DB::table('taggables')->count()]);
         $this->assertSame(0, $second->totals()['created']);
         $this->assertSame(0, $second->totals()['updated']);
-        $this->assertSame($second->totals()['unchanged'], array_sum(array_map('count', $backup->data)));
+        $this->assertSame($second->totals()['unchanged'], collect($second->summary['entities'])->sum('source'));
     }
 
     public function test_bronwijziging_wordt_bijgewerkt(): void

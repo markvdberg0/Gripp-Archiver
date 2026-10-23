@@ -8,6 +8,7 @@ use App\Import\Mapper;
 use App\Models\Company;
 use App\Models\Contact;
 use App\Models\Employee;
+use App\Models\Offer;
 use App\Models\TimelineEntry;
 use Illuminate\Database\Eloquent\Model;
 
@@ -17,6 +18,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class TimelineMapper extends Mapper
 {
+    public const VERSION = 2;
+
     public function entity(): string
     {
         return 'timelineentry';
@@ -30,7 +33,9 @@ class TimelineMapper extends Mapper
     /** Gripp-veld => [kolom, model]. Wordt per fase uitgebreid. */
     protected function documentColumns(): array
     {
-        return [];
+        return [
+            'offer' => ['offer_id', Offer::class],
+        ];
     }
 
     public function map(array $row, Context $ctx): ?array

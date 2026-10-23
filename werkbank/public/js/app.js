@@ -14,7 +14,8 @@
   });
 
   // Regels-editor: regels toevoegen/verwijderen en totalen live tonen.
-  function num(v) { var n = parseFloat(String(v || '').replace(/\./g, '').replace(',', '.')); return isNaN(n) ? 0 : n; }
+  // Zelfde regel als de server (Bedragen::parse): met komma is de punt een duizendtal-scheiding.
+  function num(v) { var s = String(v || '').replace(/[\s€]/g, ''); if (s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.'); var n = parseFloat(s); return isNaN(n) ? 0 : n; }
   function eur(n) { return '€ ' + n.toLocaleString('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
   function recalc(table) {

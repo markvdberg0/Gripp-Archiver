@@ -28,6 +28,15 @@ final class Importer
         Mappers\FileMapper::class,
         Mappers\CompanyMapper::class,
         Mappers\ContactMapper::class,
+        Mappers\UnitMapper::class,
+        Mappers\LedgerMapper::class,
+        Mappers\CostCenterMapper::class,
+        Mappers\ProductMapper::class,
+        Mappers\PacketMapper::class,
+        Mappers\PacketLineMapper::class,
+        Mappers\OfferPhaseMapper::class,
+        Mappers\OfferMapper::class,
+        Mappers\OfferLineMapper::class,
         Mappers\TimelineMapper::class,
     ];
 
@@ -36,12 +45,12 @@ final class Importer
     {
         $all = array_map(fn ($c) => new $c, self::MAPPERS);
 
-        return $only ? array_values(array_filter($all, fn (Mapper $m) => in_array($m->entity(), $only, true))) : $all;
+        return $only ? array_values(array_filter($all, fn (Mapper $m) => in_array($m->key(), $only, true))) : $all;
     }
 
     public static function entities(): array
     {
-        return array_map(fn (Mapper $m) => $m->entity(), self::mappers());
+        return array_map(fn (Mapper $m) => $m->key(), self::mappers());
     }
 
     public function run(ImportRun $run, ?callable $progress = null): ImportRun
@@ -62,9 +71,9 @@ final class Importer
             DB::beginTransaction();
             try {
                 foreach (self::mappers($only) as $mapper) {
-                    $progress && $progress("{$mapper->entity()}: bezig");
+                    $progress && $progress("{$mapper->key()}: bezig");
                     $this->importEntity($mapper, $ctx);
-                    $progress && $progress($this->line($mapper->entity(), $ctx->stats[$mapper->entity()] ?? []));
+                    $progress && $progress($this->line($mapper->key(), $ctx->stats[$mapper->key()] ?? []));
                 }
                 foreach (self::mappers($only) as $mapper) {
                     $checks = array_merge($checks, $mapper->checks($ctx));
@@ -104,13 +113,13 @@ final class Importer
 
     private function importEntity(Mapper $mapper, Context $ctx): void
     {
-        $entity = $mapper->entity();
+        $entity = $mapper->key();
         $class = $mapper->model();
         $softDeletes = in_array(SoftDeletes::class, class_uses_recursive($class), true);
-        $rows = $ctx->snapshot->rows($entity);
+        $rows = array_values(array_filter($ctx->snapshot->rows($mapper->entity()), fn ($r) => $mapper->accepts($r, $ctx)));
         $ctx->stats[$entity] = ['source' => count($rows), 'created' => 0, 'updated' => 0, 'unchanged' => 0, 'conflicts' => 0, 'skipped' => 0, 'errors' => 0];
-        if (! $ctx->snapshot->has($entity)) {
-            $ctx->issue($entity, null, 'ontbreekt', "Tabel {$entity} staat niet in deze snapshot (geen leesrechten in Gripp?).");
+        if (! $ctx->snapshot->has($mapper->entity())) {
+            $ctx->issue($entity, null, 'ontbreekt', "Tabel {$mapper->entity()} staat niet in deze snapshot (geen leesrechten in Gripp?).");
         }
         $existing = ($softDeletes ? $class::withTrashed() : $class::query())->whereNotNull('gripp_id')->get()->keyBy('gripp_id');
         $seen = [];
@@ -177,7 +186,7 @@ final class Importer
         }
 
         $missing = $existing->keys()->reject(fn ($id) => isset($seen[$id]))->count();
-        if ($missing && $ctx->snapshot->has($entity)) {
+        if ($missing && $ctx->snapshot->has($mapper->entity())) {
             $ctx->stats[$entity]['missing_in_source'] = $missing;
             $ctx->issue($entity, null, 'niet in bron', "{$missing} eerder geïmporteerde record(s) staan niet meer in de bron. Ze zijn niet verwijderd.");
         }

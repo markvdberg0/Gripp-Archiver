@@ -79,10 +79,43 @@ class FakeBackup
                 ['id' => 12, 'firstname' => 'Sara', 'lastname' => 'Staal', 'company' => $r(2, 'Staal & Co', 'bedrijf'), 'salutation' => $r(2, 'Mevrouw'), 'active' => true, 'tags' => [$r(2, 'Groot')]],
                 ['id' => 13, 'firstname' => 'Wees', 'lastname' => 'Contact', 'company' => $r(99999, 'bestaat niet', 'bedrijf')],
             ],
+            // Fase 2
+            'unit' => [['id' => 1, 'name' => 'uur', 'unittype' => $r(1, 'Uren')], ['id' => 3, 'name' => 'stuks', 'unittype' => $r(2, 'Aantallen')]],
+            'ledger' => [
+                ['id' => 8000, 'number' => '8000', 'name' => 'Omzet', 'type' => $r(1, 'Resultatenrekening'), 'debitcredit' => $r(2, 'Credit / Verkoop'), 'active' => true],
+                ['id' => 7000, 'number' => '7000', 'name' => 'Inkoopwaarde', 'type' => $r(1, 'Resultatenrekening'), 'debitcredit' => $r(1, 'Debet / Inkoop'), 'active' => true],
+            ],
+            'costheading' => [['id' => 1, 'number' => 'KP-MON', 'name' => 'Montage']],
+            'product' => [
+                ['id' => 66, 'number' => 37002, 'name' => 'Elektrische inrichting', 'sellingprice' => '5500.00', 'buyingprice' => '3000.00', 'unit' => $r(1, 'uur'),
+                    'vat' => $r(27, 'BTW 21%'), 'buyingvat' => $r(127, 'BTW 21%'), 'ledger' => $r(8000), 'purchaseledger' => $r(7000), 'invoicebasis' => $r(1, 'Fixed'),
+                    'supplier' => $r(2, 'Staal & Co'), 'supplierordercode' => 'EI-1', 'customfield_voorraad' => '4', 'tags' => [$r(2, 'Groot')]],
+                ['id' => 67, 'number' => 37003, 'name' => 'Transformator', 'sellingprice' => '15300.00', 'buyingprice' => '12000.00', 'unit' => $r(3, 'stuks'), 'vat' => $r(27, 'BTW 21%'), 'archived' => false],
+            ],
+            'packet' => [['id' => 1, 'number' => 1, 'name' => 'Standaard station', 'unit' => $r(3)]],
+            'packetline' => [
+                ['id' => 1, 'packet' => $r(1), 'product' => $r(67, 'Transformator (37003)'), 'amount' => 1, 'sellingprice' => '15300.00', 'discount' => 0, 'vat' => $r(27, 'BTW 21%'), 'rowtype' => $r(1, 'NORMAAL'), '_ordering' => 0],
+            ],
+            'offerphase' => [['id' => 1, 'name' => 'Acquisitie', '_ordering' => 0], ['id' => 5, 'name' => 'Beoordeling', '_ordering' => 4]],
+            'offer' => [
+                ['id' => 217, 'number' => 1002, 'name' => 'Prijsaanvraag compactstation', 'company' => $r(1, 'Bakker', 'bedrijf'), 'contact' => $r(11), 'phase' => $r(1),
+                    'status' => $r(9, 'Verzonden'), 'acceptancestatus' => $r(1, 'Geaccepteerd'), 'acceptedon' => $d('2025-05-20'), 'date' => $d('2025-05-15'),
+                    'validity' => $r(1, 'Standaard (offerte 30 dagen geldig)'), 'chance' => 50, 'accountmanager' => $r(100), 'totalexclvat' => '26750.00', 'totalinclvat' => '32367.50',
+                    'customfield_levertijd' => '12 weken', 'template' => $r(42, 'Offerte Project'), 'description' => '<p>Inleiding</p>'],
+                ['id' => 218, 'number' => 1003, 'name' => 'Concept station', 'company' => $r(2), 'status' => $r(4, 'Concept'), 'date' => $d('2026-09-01'), 'totalexclvat' => '0.00', 'totalinclvat' => '0.00'],
+                ['id' => 219, 'name' => 'Basis compactstation', 'isbasis' => true, 'status' => $r(4, 'Concept'), 'date' => $d('2025-01-01'), 'totalexclvat' => '0.00', 'totalinclvat' => '0.00'],
+            ],
+            'offerprojectline' => [
+                ['id' => 107, 'offerprojectbase' => $r(217, '', 'offerte'), 'rowtype' => $r(2, 'GROEPLABEL'), 'additionalsubject' => 'Compactstation', 'amount' => 4, 'sellingprice' => '0.00', 'discount' => 0, 'product' => $r(2, 'Groep', 'dummyproduct'), 'vat' => $r(27, 'BTW 21%'), '_ordering' => 0],
+                ['id' => 111, 'offerprojectbase' => $r(217, '', 'offerte'), 'rowtype' => $r(1, 'NORMAAL'), 'additionalsubject' => '', 'product' => $r(66, 'Elektrische inrichting (37002)'), 'amount' => 2, 'sellingprice' => '5500.00', 'buyingprice' => '3000.00', 'discount' => 0, 'unit' => $r(1, 'uur'), 'vat' => $r(27, 'BTW 21%'), '_ordering' => 1, 'description' => 'Inclusief aansluiten'],
+                ['id' => 112, 'offerprojectbase' => $r(217, '', 'offerte'), 'rowtype' => $r(1, 'NORMAAL'), 'additionalsubject' => 'Transformator 630 kVA', 'product' => $r(67), 'amount' => 1, 'sellingprice' => '17500.00', 'discount' => 10, 'unit' => $r(3), 'vat' => $r(27, 'BTW 21%'), '_ordering' => 2],
+                // hoort bij een opdracht, niet bij een offerte
+                ['id' => 900, 'offerprojectbase' => $r(901, '', 'opdracht'), 'rowtype' => $r(1, 'NORMAAL'), 'additionalsubject' => 'Uitvoering', 'amount' => 10, 'sellingprice' => '100.00', 'discount' => 0, 'vat' => $r(27, 'BTW 21%'), '_ordering' => 0],
+            ],
             'timelineentry' => [
                 ['id' => 501, 'company' => $r(1), 'contact' => $r(11), 'employee' => $r(103, 'Anna de Vries'), 'timelinetype' => $r(4, 'RECEIVEDEMAIL'), 'date' => $d('2026-09-22 10:15:00'),
                     'subject' => 'Aanvraag', 'message' => '<p>Graag een <b>offerte</b><script>alert(1)</script><img src="https://evil.test/x.png"></p>', 'files' => [$r(9002, 'mail.pdf')]],
-                ['id' => 502, 'company' => $r(1), 'timelinetype' => $r(1, 'USERMESSAGE'), 'date' => $d('2026-09-23'), 'message' => 'Teruggebeld'],
+                ['id' => 502, 'company' => $r(1), 'offer' => $r(217), 'timelinetype' => $r(1, 'USERMESSAGE'), 'date' => $d('2026-09-23'), 'message' => 'Teruggebeld'],
                 ['id' => 503, 'company' => $r(2), 'timelinetype' => $r(2, 'SYSTEMMESSAGE'), 'date' => $d('2026-09-24'), 'message' => 'Status gewijzigd', 'files' => [$r(9003, 'ontbreekt.pdf'), $r(9004, 'kopie.pdf')]],
             ],
         ];

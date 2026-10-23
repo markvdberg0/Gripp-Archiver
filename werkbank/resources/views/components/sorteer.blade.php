@@ -1,7 +1,8 @@
-@props(['field', 'label', 'default' => false])
+@props(['field', 'label', 'default' => false, 'defaultDir' => 'asc'])
 @php
-    $current = request('sort', $default ? $field : null);
-    $dir = $current === $field && request('dir') !== 'desc' ? 'desc' : 'asc';
-    $arrow = $current === $field ? (request('dir') === 'desc' ? ' ↓' : ' ↑') : '';
+    $active = request('sort') === $field || (! request('sort') && $default);
+    $currentDir = request('sort') ? (request('dir') === 'desc' ? 'desc' : 'asc') : $defaultDir;
+    $nextDir = $active && $currentDir === 'asc' ? 'desc' : 'asc';
+    $arrow = $active ? ($currentDir === 'desc' ? ' ↓' : ' ↑') : '';
 @endphp
-<a href="{{ request()->fullUrlWithQuery(['sort' => $field, 'dir' => $dir, 'page' => null]) }}">{{ $label }}{{ $arrow }}</a>
+<a href="{{ request()->fullUrlWithQuery(['sort' => $field, 'dir' => $nextDir, 'page' => null]) }}">{{ $label }}{{ $arrow }}</a>

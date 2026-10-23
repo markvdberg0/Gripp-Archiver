@@ -3,6 +3,7 @@
 namespace App\Import;
 
 use App\Models\StoredFile;
+use App\Models\VatRate;
 use Illuminate\Database\Eloquent\Model;
 use Symfony\Component\Mime\MimeTypes;
 
@@ -38,6 +39,27 @@ final class Context
     public function ids(string $modelClass, mixed $refs): array
     {
         return array_values(array_filter(array_map(fn ($r) => $this->id($modelClass, $r), Gripp::ids($refs) ?: [])));
+    }
+
+    /**
+     * Btw-tarief bij een Gripp-verwijzing ({ id, searchname: 'BTW 21%' }). Gripp levert geen tabel met
+     * tarieven; ze worden aangemaakt uit de verwijzingen, met het percentage uit de naam ("nul" = 0%).
+     */
+    public function vatRate(mixed $ref, string $kind): ?int
+    {
+        $gid = Gripp::id($ref);
+        if ($gid === null) {
+            return null;
+        }
+        if ($id = $this->id(VatRate::class, $gid)) {
+            return $id;
+        }
+        $name = Gripp::label($ref) ?? "Btw {$gid}";
+        $pct = preg_match('/(\d+(?:[.,]\d+)?)\s*%/', $name, $m) ? (float) str_replace(',', '.', $m[1]) : 0.0;
+        $rate = VatRate::create(['gripp_id' => $gid, 'name' => mb_substr($name, 0, 100), 'percentage' => $pct, 'kind' => $kind, 'active' => true, 'gripp_synced_at' => now()]);
+        $this->maps[VatRate::class][$gid] = $rate->id;
+
+        return $rate->id;
     }
 
     public function remember(Model $model): void
