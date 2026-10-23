@@ -31,6 +31,8 @@ class SettingsController extends Controller
         'nummer.opdracht' => ['nullable', 'integer', 'min:1'],
         'nummer.factuur' => ['nullable', 'integer', 'min:1'],
         'nummer.inkoopopdracht' => ['nullable', 'integer', 'min:1'],
+        'nummer.boeknummer' => ['nullable', 'integer', 'min:1'],
+        'inkoop.vier_ogen_drempel' => ['required', 'numeric', 'min:0'],
     ];
 
     public function edit(): View

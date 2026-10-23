@@ -12,6 +12,8 @@ use App\Models\Employee;
 use App\Models\Invoice;
 use App\Models\Offer;
 use App\Models\Project;
+use App\Models\PurchaseInvoice;
+use App\Models\PurchaseOrder;
 use App\Models\Task;
 use App\Models\TimelineEntry;
 use Illuminate\Database\Eloquent\Model;
@@ -22,7 +24,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class TimelineMapper extends Mapper
 {
-    public const VERSION = 4;
+    public const VERSION = 5;
 
     public function entity(): string
     {
@@ -43,6 +45,8 @@ class TimelineMapper extends Mapper
             'task' => ['task_id', Task::class],
             'invoice' => ['invoice_id', Invoice::class],
             'contract' => ['contract_id', Contract::class],
+            'purchaseorder' => ['purchase_order_id', PurchaseOrder::class],
+            'purchaseinvoice' => ['purchase_invoice_id', PurchaseInvoice::class],
         ];
     }
 

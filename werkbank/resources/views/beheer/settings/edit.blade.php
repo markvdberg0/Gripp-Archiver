@@ -41,7 +41,11 @@
                     <x-veld name="nummer__opdracht" label="Volgende opdrachtnummer" type="number" :value="$values['nummer__opdracht']" />
                     <x-veld name="nummer__factuur" label="Volgende factuurnummer" type="number" :value="$values['nummer__factuur']" />
                     <x-veld name="nummer__inkoopopdracht" label="Volgende inkoopopdrachtnummer" type="number" :value="$values['nummer__inkoopopdracht']" />
+                    <x-veld name="nummer__boeknummer" label="Volgende boeknummer inkoopfactuur" type="number" :value="$values['nummer__boeknummer']" />
                 </div>
+            </fieldset>
+            <fieldset><legend>Inkoop</legend>
+                <x-veld name="inkoop__vier_ogen_drempel" label="Vier-ogendrempel (€ incl. btw)" type="number" step="0.01" :value="$values['inkoop__vier_ogen_drempel']" required hint="Boven dit bedrag moet iemand anders dan de invoerder de inkoopfactuur goedkeuren. 0 = altijd." />
             </fieldset>
         </div>
     </div>

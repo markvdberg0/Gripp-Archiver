@@ -156,6 +156,30 @@ class FakeBackup
                 ['id' => 4001, 'invoice' => $r(2001), 'date' => $d('2025-07-10'), 'amount' => '500.00', 'notes' => 'Deelbetaling'],
                 ['id' => 4002, 'invoice' => $r(2002), 'date' => $d('2025-08-02'), 'amount' => '-121.00'],
             ],
+            // Fase 5
+            'purchaseorder' => [
+                ['id' => 8001, 'number' => 202505171, 'name' => 'Transformator', 'company' => $r(2, 'Staal & Co'), 'supplier' => $r(77777, 'geen relatie'), 'purchaseorderstatus' => $r(2, 'Verzonden'), 'phase' => $r(2, 'Bevestigd'),
+                    'date' => $d('2025-06-10'), 'deadline' => $d('2025-07-01'), 'totalincldiscountexclvat' => '12000.00', 'accountmanager' => $r(100)],
+            ],
+            'purchaseorderline' => [
+                ['id' => 8501, 'purchaseorder' => $r(8001), 'rowtype' => $r(1, 'NORMAAL'), 'additionalsubject' => 'Transformator 630 kVA', 'amount' => 1, 'unit' => 'stuks', 'sellingprice' => '12000.00', 'discount' => 0,
+                    'vat' => $r(127, 'BTW 21%'), 'ledger' => $r(7000), 'project' => $r(901, '', 'opdracht'), 'projectline' => $r(900), 'ordercodesupplier' => 'TR-630', '_ordering' => 0],
+            ],
+            'purchaseinvoice' => [
+                ['id' => 6001, 'number' => 'INK-1', 'bookingnumber' => 1201, 'company' => $r(2), 'phase' => $r(4, 'Verwerkt'), 'date' => $d('2025-07-05'), 'expirydate' => $d('2025-08-04'),
+                    'totalinclvat' => '14520.00', 'totalpayed' => '10000.00', 'totalopeninclvat' => '4520.00', 'files' => [$r(9001, 'kvk-uittreksel.pdf')]],
+                ['id' => 6002, 'number' => 'DE-77', 'bookingnumber' => 1202, 'company' => $r(2), 'phase' => $r(5, 'On-hold'), 'unprocessed' => true, 'date' => $d('2025-07-06'),
+                    'totalinclvat' => '1000.00', 'totalpayed' => '0.00', 'totalopeninclvat' => '1000.00'],
+                ['id' => 6003, 'number' => 'INK-1', 'bookingnumber' => 1201, 'company' => $r(1), 'phase' => $r(1, 'Concept'), 'date' => $d('2025-07-07'),
+                    'totalinclvat' => '0.00', 'totalpayed' => '0.00', 'totalopeninclvat' => '0.00'], // dubbel boeknummer
+            ],
+            'purchaseinvoiceline' => [
+                ['id' => 7001, 'purchaseinvoice' => $r(6001), 'rowtype' => $r(1, 'NORMAAL'), 'additionalsubject' => 'Transformator', 'amount' => 1, 'sellingprice' => '12000.00', 'discount' => 0,
+                    'vat' => $r(127, 'BTW 21%'), 'ledger' => $r(7000), 'purchaseorderline' => $r(8501), 'project' => $r(901, '', 'opdracht'), '_ordering' => 0],
+                ['id' => 7002, 'purchaseinvoice' => $r(6002), 'rowtype' => $r(1, 'NORMAAL'), 'additionalsubject' => 'Onderdelen uit Duitsland', 'amount' => 1, 'sellingprice' => '1000.00', 'discount' => 0,
+                    'vat' => $r(137, 'BTW binnen EU 21%'), 'costheading' => $r(1), '_ordering' => 0],
+            ],
+            'purchasepayment' => [['id' => 7501, 'purchaseinvoice' => $r(6001), 'date' => $d('2025-07-20'), 'amount' => '10000.00', 'notes' => 'Deel']],
             'timelineentry' => [
                 ['id' => 501, 'company' => $r(1), 'contact' => $r(11), 'employee' => $r(103, 'Anna de Vries'), 'timelinetype' => $r(4, 'RECEIVEDEMAIL'), 'date' => $d('2026-09-22 10:15:00'),
                     'subject' => 'Aanvraag', 'message' => '<p>Graag een <b>offerte</b><script>alert(1)</script><img src="https://evil.test/x.png"></p>', 'files' => [$r(9002, 'mail.pdf')]],

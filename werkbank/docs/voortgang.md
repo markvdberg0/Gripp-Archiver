@@ -110,3 +110,31 @@ Per fase: wat werkt aantoonbaar, hoe is het getest, welke beperkingen zijn er en
 - Na de import hebben contracten geen volgende factuurdatum, zodat Werkbank niet ongemerkt naast Gripp gaat factureren. Die stel je per contract in bij de overstap.
 
 **Volgende stap:** fase 5, inkoop.
+
+## Fase 5 — Inkoopopdrachten en inkoopfacturen
+
+**Wat werkt**
+
+- Inkoopopdrachten: lijst met filters, aanmaken met regels (grootboek, kostenplaats, opdracht per regel; regels erven de opdracht), statussen concept → verzonden → bevestigd → afgerond, archiveren, PDF voor de leverancier, overzicht van wat er al is gefactureerd.
+- Inkoopfacturen: boeken met eigen boeknummer en het factuurnummer van de leverancier, vervaldatum uit de betaaltermijn van de leverancier, regels met grootboek/kostenplaats/opdracht, voorstel vanuit een inkoopopdracht (regels gekoppeld), scan uploaden bij Bestanden.
+- **Controle vóór goedkeuring** (op basis van het werkproces in jullie documentatie): leverancier, factuurnummer, dubbel factuurnummer bij dezelfde leverancier (blokkeert), regels aanwezig, totaal van de regels gelijk aan het totaal op de factuur (blokkeert), koppeling aan inkoopopdracht/opdracht/kostenplaats en grootboek per regel (waarschuwing), bedrag binnen de inkoopopdracht (waarschuwing).
+- **Fasen** concept → controle → akkoord → verwerkt, terugzetten, **on hold** met reden en vrijgeven; goedkeuren alleen met het recht "inkoopfacturen goedkeuren"; **vier-ogenprincipe**: boven een instelbare drempel mag de invoerder niet zelf goedkeuren.
+- Betalingen op inkoopfacturen (na goedkeuring), openstaand en vervallen.
+- **Btw verlegd** (intracommunautair, import): btw wordt berekend en getoond maar telt niet mee in het te betalen totaal; instelbaar per btw-tarief en automatisch herkend bij de import.
+- Import: inkoopopdrachten (leverancier, status, Gripp-PDF), regels (bestelcode, eenheid, opdracht), inkoopfacturen (fase, on hold, inbox, boeknummer met detectie van dubbele nummers), regels en betalingen; inkoopopdracht en opdracht van een inkoopfactuur afgeleid uit de regels. Het importrapport noemt nu per document waar regels en kopbedrag in de bron niet op elkaar aansluiten.
+
+**Hoe getest**
+
+- 96 tests (741 controles), nieuw: inkoopopdracht met nummering, status, PDF en verwijderbeveiliging; inkoopfactuur uit inkoopopdracht; btw verlegd; controle en goedkeuring met vier-ogenprincipe, betaling en verwerken; dubbel factuurnummer; on hold; rechten; import inclusief afgeleide koppelingen, dubbele boeknummers, verlegde btw en de meldingen per afwijkend document.
+- Browser: inkoopfacturen per fase (aantallen gelijk aan Gripp: 12 concept, 2 akkoord, 246 verwerkt, 2 on hold), detail van een on-hold-factuur met de controle en de echte timeline.
+- Echte back-up: 156 inkoopopdrachten (som gelijk aan de bron), 315 regels, 262 inkoopfacturen (totaal en openstaand gelijk aan de bron en het rapport van de back-uptool), 427 regels, 271 betalingen (sluiten aan bij alle 262 facturen). Regels tellen op tot het kopbedrag bij 155 van 156 inkoopopdrachten en 256 van 257 inkoopfacturen met regels; de twee uitzonderingen zijn afrondingsverschillen van 2 en 3 cent in Gripp zelf en staan als melding in het rapport.
+
+**Beperkingen**
+
+- Geen ontvangstregistratie (goederenontvangst) en dus geen volledige drieweg-controle; de controle vergelijkt factuur en inkoopopdracht.
+- Geen inbox voor inkoopfacturen per e-mail en geen automatisch uitlezen van PDF's.
+- Geen SEPA-betaalbestand en geen koppeling met bank of boekhouding.
+- Betalingen op inkoopfacturen kunnen nog niet worden verwijderd in het scherm.
+- Bij leveranciers zijn in de Gripp-data dubbele relaties zichtbaar (bijvoorbeeld drie keer dezelfde naam); samenvoegen kan nog niet.
+
+**Volgende stap:** fase 6, overzichten, back-up en herstel, documentatie.

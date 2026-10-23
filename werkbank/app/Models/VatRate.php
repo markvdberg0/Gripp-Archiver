@@ -16,13 +16,23 @@ class VatRate extends Model
 
     protected function casts(): array
     {
-        return ['percentage' => 'decimal:2', 'active' => 'boolean'];
+        return ['percentage' => 'decimal:2', 'active' => 'boolean', 'reverse_charge' => 'boolean'];
     }
 
     protected static function booted(): void
     {
-        static::saved(fn () => Cache::forget('werkbank.vat'));
-        static::deleted(fn () => Cache::forget('werkbank.vat'));
+        $forget = function () {
+            Cache::forget('werkbank.vat');
+            Cache::forget('werkbank.vat.rc');
+        };
+        static::saved($forget);
+        static::deleted($forget);
+    }
+
+    /** @return list<int> tarieven met verlegde btw */
+    public static function reverseChargeIds(): array
+    {
+        return Cache::rememberForever('werkbank.vat.rc', fn () => static::query()->where('reverse_charge', true)->pluck('id')->map(fn ($id) => (int) $id)->all());
     }
 
     /** @return array<int, float> id => percentage */

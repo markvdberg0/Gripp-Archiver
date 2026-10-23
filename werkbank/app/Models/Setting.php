@@ -22,7 +22,8 @@ class Setting extends Model
         'bedrijf.telefoon' => '', 'bedrijf.email' => '', 'bedrijf.website' => '', 'bedrijf.kvk' => '', 'bedrijf.btw' => '',
         'bedrijf.iban' => '', 'bedrijf.bic' => '',
         'offerte.geldigheid_dagen' => '30', 'offerte.voettekst' => '', 'factuur.betaaltermijn' => '30', 'factuur.voettekst' => '',
-        'nummer.offerte' => '', 'nummer.opdracht' => '', 'nummer.factuur' => '', 'nummer.inkoopopdracht' => '',
+        'nummer.offerte' => '', 'nummer.opdracht' => '', 'nummer.factuur' => '', 'nummer.inkoopopdracht' => '', 'nummer.boeknummer' => '',
+        'inkoop.vier_ogen_drempel' => '2500',
     ];
 
     public static function get(string $key, ?string $default = null): ?string

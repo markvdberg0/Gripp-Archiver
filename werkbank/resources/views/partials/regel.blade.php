@@ -22,7 +22,7 @@
     @endif
     <td><input type="text" inputmode="decimal" class="w-sm" name="{{ $n }}[discount]" value="{{ Bedragen::input($r['discount'] ?? 0, 0) }}" data-f="discount" aria-label="Korting"></td>
     <td><select name="{{ $n }}[vat_rate_id]" data-f="vat_rate_id" aria-label="Btw-tarief"><option value="" data-pct="0">—</option>
-        @foreach ($vatRates as $v)<option value="{{ $v->id }}" data-pct="{{ $v->percentage }}" @selected((string) ($r['vat_rate_id'] ?? '') === (string) $v->id)>{{ $v->name }}</option>@endforeach
+        @foreach ($vatRates as $v)<option value="{{ $v->id }}" data-pct="{{ $v->percentage }}" data-rc="{{ $v->reverse_charge ? 1 : 0 }}" @selected((string) ($r['vat_rate_id'] ?? '') === (string) $v->id)>{{ $v->name }}</option>@endforeach
     </select></td>
     @foreach ($extra ?? [] as $field => [$label, $options])
         <td><select name="{{ $n }}[{{ $field }}]" aria-label="{{ $label }}" style="max-width:160px"><option value="">—</option>@foreach ($options as $id => $name)<option value="{{ $id }}" @selected((string) ($r[$field] ?? '') === (string) $id)>{{ $name }}</option>@endforeach</select></td>

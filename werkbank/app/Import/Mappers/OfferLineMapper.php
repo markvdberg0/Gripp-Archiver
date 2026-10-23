@@ -48,13 +48,7 @@ class OfferLineMapper extends LineMapper
     public function checks(Context $ctx): array
     {
         $offers = Offer::withTrashed()->whereNotNull('gripp_id')->with('lines')->get();
-        $ok = $offers->filter(fn (Offer $o) => abs((float) $o->computeTotals()['excl'] - (float) $o->total_excl) < 0.02)->count();
 
-        return array_merge(parent::checks($ctx), [[
-            'label' => 'offerline: offertes waarvan regels optellen tot het totaal',
-            'source' => $offers->count(),
-            'local' => $ok,
-            'ok' => $ok === $offers->count(),
-        ]]);
+        return array_merge(parent::checks($ctx), [$this->totalsCheck($offers, $ctx, 'offertes waarvan regels optellen tot het totaal')]);
     }
 }

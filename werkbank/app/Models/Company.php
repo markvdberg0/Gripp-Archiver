@@ -62,6 +62,16 @@ class Company extends Model
         return $this->hasMany(Invoice::class);
     }
 
+    public function purchaseOrders(): HasMany
+    {
+        return $this->hasMany(PurchaseOrder::class, 'supplier_id');
+    }
+
+    public function purchaseInvoices(): HasMany
+    {
+        return $this->hasMany(PurchaseInvoice::class, 'supplier_id');
+    }
+
     public function roleLabels(): array
     {
         return array_values(array_filter(self::ROLLEN, fn ($label, $field) => $this->{$field}, ARRAY_FILTER_USE_BOTH));

@@ -46,11 +46,7 @@ class ProjectLineMapper extends LineMapper
     public function checks(Context $ctx): array
     {
         $projects = Project::withTrashed()->whereNotNull('gripp_id')->with('lines')->get();
-        $ok = $projects->filter(fn (Project $p) => abs((float) $p->computeTotals()['excl'] - (float) $p->total_excl) < 0.02)->count();
 
-        return array_merge(parent::checks($ctx), [[
-            'label' => 'projectline: opdrachten waarvan regels optellen tot het totaal',
-            'source' => $projects->count(), 'local' => $ok, 'ok' => $ok === $projects->count(),
-        ]]);
+        return array_merge(parent::checks($ctx), [$this->totalsCheck($projects, $ctx, 'opdrachten waarvan regels optellen tot het totaal')]);
     }
 }

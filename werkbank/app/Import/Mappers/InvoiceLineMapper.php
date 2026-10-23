@@ -60,11 +60,7 @@ class InvoiceLineMapper extends LineMapper
             }
         }
         $invoices = Invoice::withTrashed()->whereNotNull('gripp_id')->with('lines')->get();
-        $ok = $invoices->filter(fn (Invoice $i) => abs((float) $i->computeTotals()['excl'] - (float) $i->total_excl) < 0.02)->count();
 
-        return array_merge(parent::checks($ctx), [[
-            'label' => 'invoiceline: facturen waarvan regels optellen tot het totaal',
-            'source' => $invoices->count(), 'local' => $ok, 'ok' => $ok === $invoices->count(),
-        ]]);
+        return array_merge(parent::checks($ctx), [$this->totalsCheck($invoices, $ctx, 'facturen waarvan regels optellen tot het totaal')]);
     }
 }

@@ -237,7 +237,7 @@ class OfferTest extends TestCase
     public function test_instellingen_en_stamgegevens(): void
     {
         $this->actingAsRole('administratie');
-        $this->put('/beheer/instellingen', ['bedrijf__naam' => 'Mijn Bedrijf B.V.', 'offerte__geldigheid_dagen' => 14, 'factuur__betaaltermijn' => 30])->assertRedirect();
+        $this->put('/beheer/instellingen', ['bedrijf__naam' => 'Mijn Bedrijf B.V.', 'offerte__geldigheid_dagen' => 14, 'factuur__betaaltermijn' => 30, 'inkoop__vier_ogen_drempel' => 2500])->assertRedirect();
         $this->assertSame('Mijn Bedrijf B.V.', Setting::get('bedrijf.naam'));
         $this->assertSame(1, AuditLog::where('event', 'instellingen_gewijzigd')->count());
 

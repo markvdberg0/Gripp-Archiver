@@ -4,6 +4,7 @@ namespace App\Import;
 
 use App\Models\Product;
 use App\Models\Unit;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Basis voor documentregels (Gripp: offerprojectline, invoiceline, packetline, …). Regels hebben in Gripp
@@ -21,6 +22,34 @@ abstract class LineMapper extends Mapper
     protected function vatKind(): string
     {
         return 'verkoop';
+    }
+
+    /**
+     * Controle: tellen de regels van elk document op tot het (Gripp-)totaal? Afwijkingen worden per document
+     * als melding vastgelegd, zodat ze na te lopen zijn.
+     *
+     * @param  iterable<Model>  $documents  met geladen lines
+     */
+    protected function totalsCheck(iterable $documents, Context $ctx, string $label, string $which = 'excl'): array
+    {
+        $n = 0;
+        $ok = 0;
+        foreach ($documents as $doc) {
+            if ($which === 'incl' && $doc->lines->isEmpty()) {
+                continue;
+            }
+            $n++;
+            $computed = (float) $doc->computeTotals()[$which];
+            $stored = (float) $doc->{'total_'.$which};
+            if (abs($computed - $stored) < 0.02) {
+                $ok++;
+            } else {
+                $ctx->issue($this->key(), $doc->gripp_id, 'controle', sprintf('%s: regels tellen op tot %s, totaal in Gripp is %s (%s btw).',
+                    $doc->auditLabel(), number_format($computed, 2, ',', '.'), number_format($stored, 2, ',', '.'), $which === 'incl' ? 'incl.' : 'excl.'));
+            }
+        }
+
+        return ['label' => "{$this->key()}: {$label}", 'source' => $n, 'local' => $ok, 'ok' => $ok === $n];
     }
 
     public function map(array $row, Context $ctx): ?array

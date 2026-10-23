@@ -22,9 +22,10 @@ final class Bedragen
     /**
      * @param  iterable<object{row_type: string, total_excl: mixed, vat_rate_id: ?int}>  $lines
      * @param  array<int, float>  $percentages  vat_rate_id => percentage
-     * @return array{excl: string, vat: string, incl: string, per_rate: array<int|string, array{base: string, vat: string, percentage: float}>}
+     * @param  list<int>  $reverseCharge  tarieven met verlegde btw: berekend en getoond, niet in het totaal
+     * @return array{excl: string, vat: string, incl: string, per_rate: array<int|string, array{base: string, vat: string, percentage: float, reverse_charge: bool}>}
      */
-    public static function totals(iterable $lines, array $percentages): array
+    public static function totals(iterable $lines, array $percentages, array $reverseCharge = []): array
     {
         $base = [];
         foreach ($lines as $l) {
@@ -40,9 +41,10 @@ final class Bedragen
         foreach ($base as $rateId => $sum) {
             $pct = (float) ($percentages[$rateId] ?? 0);
             $v = round($sum * $pct / 100, 2);
+            $reversed = in_array($rateId, $reverseCharge, true);
             $excl += $sum;
-            $vat += $v;
-            $perRate[$rateId] = ['base' => self::fmt($sum), 'vat' => self::fmt($v), 'percentage' => $pct];
+            $vat += $reversed ? 0 : $v;
+            $perRate[$rateId] = ['base' => self::fmt($sum), 'vat' => self::fmt($v), 'percentage' => $pct, 'reverse_charge' => $reversed];
         }
 
         return ['excl' => self::fmt($excl), 'vat' => self::fmt($vat), 'incl' => self::fmt($excl + $vat), 'per_rate' => $perRate];

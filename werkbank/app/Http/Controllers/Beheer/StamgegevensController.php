@@ -29,6 +29,7 @@ class StamgegevensController extends Controller
                 'name' => ['Naam', 'text', ['required', 'string', 'max:100']],
                 'percentage' => ['Percentage', 'decimal', ['required', 'numeric', 'between:0,100']],
                 'kind' => ['Gebruik', 'select', ['required', 'in:verkoop,inkoop,beide'], VatRate::KINDS],
+                'reverse_charge' => ['Btw verlegd (wel tonen, niet betalen)', 'bool', ['boolean']],
                 'active' => ['Actief', 'bool', ['boolean']],
             ]],
             'eenheden' => [Unit::class, 'Eenheden', [

@@ -22,7 +22,7 @@ trait HasLines
     {
         $lines = $this->relationLoaded('lines') ? $this->lines : $this->lines()->get();
 
-        return Bedragen::totals($lines, VatRate::percentages());
+        return Bedragen::totals($lines, VatRate::percentages(), VatRate::reverseChargeIds());
     }
 
     /** Btw-specificatie voor weergave: [naam, grondslag, btw]. */
@@ -31,7 +31,10 @@ trait HasLines
         $names = VatRate::query()->pluck('name', 'id');
         $out = [];
         foreach ($this->computeTotals()['per_rate'] as $rateId => $r) {
-            $out[] = ['name' => $names[$rateId] ?? 'Geen btw', 'base' => $r['base'], 'vat' => $r['vat'], 'percentage' => $r['percentage']];
+            $out[] = [
+                'name' => ($names[$rateId] ?? 'Geen btw').($r['reverse_charge'] ? ' (verlegd)' : ''),
+                'base' => $r['base'], 'vat' => $r['reverse_charge'] ? '0.00' : $r['vat'], 'percentage' => $r['percentage'],
+            ];
         }
 
         return $out;

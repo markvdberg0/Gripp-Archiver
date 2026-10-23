@@ -28,7 +28,9 @@
       var p = num(tr.querySelector('[data-f=unit_price]') && tr.querySelector('[data-f=unit_price]').value);
       var d = num(tr.querySelector('[data-f=discount]') && tr.querySelector('[data-f=discount]').value);
       var vatSel = tr.querySelector('[data-f=vat_rate_id]');
-      var pct = vatSel && vatSel.selectedOptions[0] ? num(vatSel.selectedOptions[0].getAttribute('data-pct')) : 0;
+      var opt = vatSel && vatSel.selectedOptions[0];
+      // Verlegde btw telt niet mee in het te betalen totaal.
+      var pct = opt && opt.getAttribute('data-rc') !== '1' ? num(opt.getAttribute('data-pct')) : 0;
       var total = isGroup ? 0 : Math.round(q * p * (1 - d / 100) * 100) / 100;
       excl += total; vat += Math.round(total * pct) / 100;
       var out = tr.querySelector('[data-total]');

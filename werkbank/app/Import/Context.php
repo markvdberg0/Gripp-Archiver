@@ -56,7 +56,9 @@ final class Context
         }
         $name = Gripp::label($ref) ?? "Btw {$gid}";
         $pct = preg_match('/(\d+(?:[.,]\d+)?)\s*%/', $name, $m) ? (float) str_replace(',', '.', $m[1]) : 0.0;
-        $rate = VatRate::create(['gripp_id' => $gid, 'name' => mb_substr($name, 0, 100), 'percentage' => $pct, 'kind' => $kind, 'active' => true, 'gripp_synced_at' => now()]);
+        // "BTW binnen EU 21%" / "buiten EU" / "verlegd": btw wordt berekend maar niet betaald (verlegd).
+        $reverse = $pct > 0 && (bool) preg_match('/binnen\s*EU|buiten\s*EU|verlegd|import/i', $name);
+        $rate = VatRate::create(['gripp_id' => $gid, 'name' => mb_substr($name, 0, 100), 'percentage' => $pct, 'kind' => $kind, 'reverse_charge' => $reverse, 'active' => true, 'gripp_synced_at' => now()]);
         $this->maps[VatRate::class][$gid] = $rate->id;
 
         return $rate->id;
