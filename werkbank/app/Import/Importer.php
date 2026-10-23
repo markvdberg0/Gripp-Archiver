@@ -55,6 +55,9 @@ final class Importer
         Mappers\PurchaseInvoiceMapper::class,
         Mappers\PurchaseInvoiceLineMapper::class,
         Mappers\PurchasePaymentMapper::class,
+        Mappers\MemorialMapper::class,
+        Mappers\MemorialLineMapper::class,
+        Mappers\CostMapper::class,
         Mappers\TimelineMapper::class,
     ];
 

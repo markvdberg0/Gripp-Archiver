@@ -4,7 +4,7 @@
 @section('content')
 <div class="page-head">
     <div><h1>Verkoopfacturen</h1><div class="sub">{{ $sum->n }} facturen · {{ Format::euro($sum->excl) }} excl. · {{ Format::euro($sum->incl) }} incl. btw · openstaand {{ Format::euro($sum->open) }}</div></div>
-    <div class="actions">@can('facturen.bewerken')<a class="btn btn-primary" href="{{ route('facturen.create') }}">Nieuwe factuur</a>@endcan</div>
+    <div class="actions"><a class="btn" href="{{ request()->fullUrlWithQuery(['export' => 'csv']) }}">CSV</a>@can('facturen.bewerken')<a class="btn btn-primary" href="{{ route('facturen.create') }}">Nieuwe factuur</a>@endcan</div>
 </div>
 <form class="filters" method="get">
     <div class="field"><label for="q">Zoeken</label><input id="q" type="search" name="q" value="{{ request('q') }}" placeholder="Nummer, onderwerp of referentie"></div>

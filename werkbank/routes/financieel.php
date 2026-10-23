@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ContractController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
 // Verkoopfacturen en contracten
@@ -22,3 +24,14 @@ Route::middleware('can:facturen.bekijken')->group(function () {
 });
 
 require __DIR__.'/inkoop.php';
+
+// Overzichten
+Route::middleware('can:rapporten.bekijken')->prefix('overzichten')->name('rapporten.')->group(function () {
+    Route::get('/', [ReportController::class, 'index'])->name('index');
+    // Recht per soort wordt in de controller gecontroleerd (debiteuren: facturen, crediteuren: inkoop).
+    Route::get('/open/{soort}', [ReportController::class, 'open'])->name('open')->whereIn('soort', ['debiteuren', 'crediteuren']);
+    Route::get('/omzet', [ReportController::class, 'revenue'])->name('omzet')->middleware('can:facturen.bekijken');
+    Route::get('/pijplijn', [ReportController::class, 'pipeline'])->name('pijplijn')->middleware('can:offertes.bekijken');
+    Route::get('/uren', [ReportController::class, 'hours'])->name('uren')->middleware('can:uren.fiatteren');
+});
+Route::get('/memoriaal-en-kosten', [BookingController::class, 'index'])->name('boekingen.index')->middleware('can:rapporten.bekijken');

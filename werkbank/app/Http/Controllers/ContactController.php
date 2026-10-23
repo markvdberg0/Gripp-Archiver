@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use App\Models\Contact;
 use App\Models\TimelineEntry;
+use App\Support\Audit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -70,6 +72,30 @@ class ContactController extends Controller
         $contactpersoon->delete();
 
         return $company ? redirect()->route('relaties.show', $company)->with('status', 'Contactpersoon verwijderd.') : redirect()->route('contactpersonen.index')->with('status', 'Contactpersoon verwijderd.');
+    }
+
+    /**
+     * AVG: persoonsgegevens van een contactpersoon definitief wissen. Het record blijft bestaan (voor
+     * koppelingen met documenten), maar naam en contactgegevens worden vervangen en de oude waarden
+     * verdwijnen ook uit het logboek.
+     */
+    public function anonymize(Contact $contactpersoon): RedirectResponse
+    {
+        $this->authorize('beheer.gebruikers');
+        DB::transaction(function () use ($contactpersoon) {
+            Audit::$muted = true;
+            $contactpersoon->forceFill([
+                'salutation' => null, 'initials' => null, 'first_name' => null, 'infix' => null, 'last_name' => 'Geanonimiseerd',
+                'function' => null, 'department' => null, 'email' => null, 'phone' => null, 'mobile' => null, 'notes' => null, 'active' => false,
+            ])->save();
+            $contactpersoon->tags()->detach();
+            Audit::$muted = false;
+            DB::table('audit_logs')->where('auditable_type', $contactpersoon->getMorphClass())->where('auditable_id', $contactpersoon->id)
+                ->update(['changes' => null, 'description' => 'Contactpersoon (geanonimiseerd)']);
+            Audit::log('geanonimiseerd', $contactpersoon, 'Contactpersoon #'.$contactpersoon->id);
+        });
+
+        return redirect()->route('contactpersonen.show', $contactpersoon)->with('status', 'Persoonsgegevens gewist. Notities in de timeline zijn niet aangepast; controleer die zo nodig.');
     }
 
     private function validated(Request $request): array

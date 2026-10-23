@@ -138,3 +138,50 @@ Per fase: wat werkt aantoonbaar, hoe is het getest, welke beperkingen zijn er en
 - Bij leveranciers zijn in de Gripp-data dubbele relaties zichtbaar (bijvoorbeeld drie keer dezelfde naam); samenvoegen kan nog niet.
 
 **Volgende stap:** fase 6, overzichten, back-up en herstel, documentatie.
+
+## Fase 6 — Overzichten, back-up en herstel, beheer
+
+**Wat werkt**
+
+- **Back-up en herstel van Werkbank**: `werkbank:backup` (database als JSON per tabel plus alle bestanden, met SHA-256 per onderdeel), automatisch elke nacht met opruimen; `werkbank:herstel` met volledige controle vooraf, automatische veiligheidsback-up, herstel op het schema van de back-up en daarna de nieuwere migraties; databasetype-onafhankelijk. Beheerpagina om back-ups te maken en (gelogd) te downloaden.
+- **Overzichten** met CSV-export: openstaande debiteuren en crediteuren op een peildatum met ouderdomsanalyse per relatie, omzet en inkoop per maand, offertepijplijn per fase met gewogen waarde, uren per medewerker per maand.
+- **Overzichtsscherm** met cijfers per rol: open offertes, openstaand en vervallen, concepten, inkoopfacturen ter goedkeuring, te fiatteren uren, mijn taken.
+- **CSV-export** van relaties en verkoopfacturen (met bescherming tegen formules in spreadsheets; elke export staat in het logboek).
+- **AVG**: contactpersoon anonimiseren (beheerder); ook de oude waarden in het logboek worden gewist.
+- **Memoriaal en kosten** uit Gripp als alleen-lezen archief.
+- Documentatie: installatie, configuratie, import, updates, back-up en herstel, beveiliging, licenties.
+
+**Hoe getest**
+
+- 107 tests (817 controles), nieuw: back-up en herstel met bestanden en veiligheidsback-up, weigeren van een gewijzigde back-up, controleren en opruimen, beheerpagina en padbeveiliging bij downloaden; debiteuren op peildatum met ouderdom (betaling na de peildatum telt niet mee), omzet per maand (concepten tellen niet), rechten op overzichten, CSV met formule-injectie, anonimiseren, memoriaal/kosten, overzichtsscherm per rol.
+- Echte gegevens: back-up 12 s, controle 2 s, herstel in een lege database 8 s met identieke aantallen en totalen; openstaande debiteuren gelijk aan het rapport van de back-uptool; som van de kosten gelijk aan de bron.
+
+**Beperkingen**
+
+- Terugzetten alleen via de opdrachtregel (bewust).
+- De `APP_KEY` zit niet in de back-up; bewaar die apart.
+- Geen winst-en-verliesrekening, balans of btw-aangifte (geen boekhouding, aanname 1).
+- Verlof is niet overgenomen.
+
+## Eindstand en gelijkwaardigheid
+
+Werkbank dekt nu de processen die in de Gripp-data aantoonbaar gebruikt worden: relaties, offertes, opdrachten, taken en planning, uren, verkoopfacturen met betalingen en herinneringen, contracten, inkoopopdrachten en inkoopfacturen met goedkeuring, plus import, back-up en overzichten. De echte back-up is volledig te importeren en alle controletotalen sluiten aan.
+
+**Volledige gelijkwaardigheid met Gripp is daarmee niet aangetoond.** Wat bewust of nog niet is gedaan:
+
+| Onderwerp | Status |
+|---|---|
+| E-mail versturen (offertes, facturen, herinneringen) | Ontbreekt; PDF downloaden en status zetten |
+| Digitaal akkoord door de klant, klantportaal | Ontbreekt |
+| Documentopmaak gelijk aan de Gripp-sjablonen | Eigen, eenvoudige opmaak |
+| Boekhouding (journaal, bank, btw-aangifte, W&V/balans) | Buiten scope; memoriaal en kosten alleen als archief |
+| UBL/e-factuur, SEPA-bestanden, bankkoppeling | Ontbreekt |
+| Agenda-koppeling, sleep-en-zet-planning | Ontbreekt; weekoverzicht met invoer |
+| Nacalculatie in euro's (kostprijs per medewerker) | Ontbreekt; alleen uren |
+| Verlof | Niet overgenomen |
+| Voorraad | Alleen de Gripp-velden als vrije velden |
+| Relaties samenvoegen (dubbele relaties) | Ontbreekt |
+| Tweestapsverificatie, wachtwoordherstel per e-mail | Ontbreekt |
+| Docker-image en CI op MariaDB/PostgreSQL | Geschreven, lokaal niet uitgevoerd (geen Docker beschikbaar); draait in GitHub Actions |
+
+Deze punten zijn de logische volgende stappen; welke daarvan nodig zijn, hangt af van de antwoorden op de open vragen in [analyse-en-plan.md](analyse-en-plan.md).

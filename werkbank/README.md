@@ -8,10 +8,16 @@ Opensource, zelf te hosten bedrijfsapplicatie voor de processen die we nu in Gri
 
 ## Wat zit erin
 
-- Inloggen met rollen (beheerder, administratie, projectleider, medewerker, alleen lezen) en een logboek van alle wijzigingen.
-- Relaties, contactpersonen, labels, bestanden en een timeline met notities en e-mails.
-- Controleerbare import uit de Gripp Back-up: eerst een droogloop, herhaalbaar zonder duplicaten, lokale wijzigingen worden nooit overschreven.
-- Zie [docs/voortgang.md](docs/voortgang.md) voor offertes, opdrachten, uren, facturen en inkoop.
+- **Relaties**: bedrijven en particulieren, contactpersonen, labels, bestanden, timeline met notities en e-mails.
+- **Verkoop**: producten en pakketten, offertes met regels, statussen, sjablonen en PDF; opdrachten (ook uit een geaccepteerde offerte) met opdrachtbevestiging.
+- **Planning en uren**: taken, weekplanning, urenregistratie met indienen en fiatteren.
+- **Facturatie**: verkoopfacturen met definitief maken, creditfacturen, betalingen en herinneringen; factureren vanuit een opdracht (restregels of termijn); contracten met periodieke facturatie.
+- **Inkoop**: inkoopopdrachten en inkoopfacturen met controle, goedkeuring (vier-ogenprincipe), on hold en betalingen; btw verlegd.
+- **Overzichten**: openstaande debiteuren en crediteuren met ouderdom, omzet per maand, offertepijplijn, uren; CSV-export.
+- **Beheer**: rollen en rechten, logboek, instellingen en nummering, stamgegevens, automatische back-ups met herstel, AVG-anonimiseren.
+- **Import** uit de Gripp Back-up: droogloop, herhaalbaar zonder duplicaten, lokale wijzigingen worden nooit overschreven, controletotalen per onderdeel.
+
+Wat (nog) niet kan, staat in [docs/voortgang.md](docs/voortgang.md#eindstand-en-gelijkwaardigheid).
 
 ## Snel starten
 

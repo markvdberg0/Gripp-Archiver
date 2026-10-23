@@ -29,6 +29,7 @@ Route::middleware(['auth', 'account'])->group(function () {
             ->middlewareFor(['create', 'store', 'edit', 'update', 'destroy'], 'can:relaties.bewerken');
         Route::post('/relaties/{relatie}/notities', [CompanyController::class, 'storeNote'])->name('relaties.notities.store');
         Route::resource('contactpersonen', ContactController::class)->parameters(['contactpersonen' => 'contactpersoon']);
+        Route::post('/contactpersonen/{contactpersoon}/anonimiseren', [ContactController::class, 'anonymize'])->name('contactpersonen.anonimiseren');
     });
 
     // Bestanden (rechten worden per gekoppeld record gecontroleerd)
@@ -48,6 +49,9 @@ Route::middleware(['auth', 'account'])->group(function () {
             Route::resource('medewerkers', Beheer\EmployeeController::class)->except(['show', 'destroy'])->parameters(['medewerkers' => 'medewerker']);
         });
         Route::middleware('can:beheer.import')->group(function () {
+            Route::get('/backups', [Beheer\BackupController::class, 'index'])->name('backups.index');
+            Route::post('/backups', [Beheer\BackupController::class, 'store'])->name('backups.store');
+            Route::get('/backups/{name}', [Beheer\BackupController::class, 'download'])->name('backups.download')->where('name', 'werkbank-backup-[A-Za-z0-9-]+\.zip');
             Route::get('/import', [Beheer\ImportController::class, 'index'])->name('import.index');
             Route::post('/import', [Beheer\ImportController::class, 'store'])->name('import.store');
             Route::get('/import/{run}', [Beheer\ImportController::class, 'show'])->name('import.show');

@@ -180,6 +180,13 @@ class FakeBackup
                     'vat' => $r(137, 'BTW binnen EU 21%'), 'costheading' => $r(1), '_ordering' => 0],
             ],
             'purchasepayment' => [['id' => 7501, 'purchaseinvoice' => $r(6001), 'date' => $d('2025-07-20'), 'amount' => '10000.00', 'notes' => 'Deel']],
+            // Fase 6
+            'memorial' => [['id' => 1, 'number' => 1004, 'name' => 'Correctie', 'type' => $r(4, 'Handmatig'), 'reportdate' => $d('2026-02-16')]],
+            'memorialline' => [
+                ['id' => 1, 'memorial' => $r(1), 'ledger' => $r(7000), 'value' => '18.15', 'description' => 'correctie'],
+                ['id' => 2, 'memorial' => $r(1), 'ledger' => $r(8000), 'value' => '-18.15', 'description' => 'correctie'],
+            ],
+            'cost' => [['id' => 1, 'number' => 5, 'date' => $d('2026-03-01'), 'value' => '99.95', 'description' => 'Abonnement', 'ledger' => $r(7000), 'costheading' => $r(1)]],
             'timelineentry' => [
                 ['id' => 501, 'company' => $r(1), 'contact' => $r(11), 'employee' => $r(103, 'Anna de Vries'), 'timelinetype' => $r(4, 'RECEIVEDEMAIL'), 'date' => $d('2026-09-22 10:15:00'),
                     'subject' => 'Aanvraag', 'message' => '<p>Graag een <b>offerte</b><script>alert(1)</script><img src="https://evil.test/x.png"></p>', 'files' => [$r(9002, 'mail.pdf')]],

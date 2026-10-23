@@ -25,7 +25,7 @@ Er moet altijd minstens één actieve beheerder zijn. Een beheerder kan zijn eig
 
 ## Logboek
 
-Elke wijziging aan relaties, contactpersonen, medewerkers, gebruikers en (in latere fasen) documenten wordt vastgelegd met gebruiker, tijdstip, IP-adres en oude en nieuwe waarden. Ook inloggen, mislukte inlogpogingen, uitloggen, wachtwoordwijzigingen, uploads en importruns staan erin. Wachtwoorden en bankgegevens worden gemaskeerd (`***`). Het logboek is alleen-lezen en te bekijken met het recht "Logboek bekijken".
+Elke wijziging aan relaties, contactpersonen, medewerkers, gebruikers, producten en documenten (offertes, opdrachten, facturen, inkoop, uren, betalingen) wordt vastgelegd met gebruiker, tijdstip, IP-adres en oude en nieuwe waarden. Ook inloggen, mislukte inlogpogingen, uitloggen, wachtwoordwijzigingen, uploads en importruns staan erin. Wachtwoorden en bankgegevens worden gemaskeerd (`***`). Het logboek is alleen-lezen en te bekijken met het recht "Logboek bekijken".
 
 ## Persoonsgegevens
 
@@ -35,7 +35,9 @@ Elke wijziging aan relaties, contactpersonen, medewerkers, gebruikers en (in lat
 - **HTML uit e-mails** (geïmporteerde timeline) wordt opgeschoond met `symfony/html-sanitizer`: geen scripts, formulieren, stijlen of externe afbeeldingen.
 - **Beveiligingsheaders:** Content-Security-Policy zonder externe bronnen en zonder inline scripts, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, en HSTS bij https.
 - Werkbank stuurt geen gegevens naar derden en heeft geen telemetrie.
-- **Verwijderen:** relaties en contactpersonen worden "zacht" verwijderd (ze blijven in de database en in back-ups). Voor een AVG-verwijderverzoek moet een beheerder het record ook uit de database en uit oude back-ups verwijderen; een functie daarvoor ontbreekt nog.
+- **Verwijderen:** relaties, contactpersonen en documenten worden "zacht" verwijderd (ze blijven in de database en in back-ups), zodat er niets per ongeluk verloren gaat.
+- **AVG-verwijderverzoek:** een beheerder kan een contactpersoon **anonimiseren** (knop op de contactpersoon). Naam en contactgegevens worden gewist, ook de oude waarden in het logboek; koppelingen met documenten blijven bestaan. Vrije tekst in notities en e-mails in de timeline wordt niet automatisch aangepast, en oudere back-ups bevatten de gegevens nog tot ze zijn opgeruimd (standaard na 14 nachten).
+- **Exports en back-ups** (CSV, back-up downloaden) worden in het logboek vastgelegd. CSV-cellen die met `=`, `+`, `-` of `@` beginnen worden onschadelijk gemaakt (formule-injectie in spreadsheets).
 
 ## Kwetsbaarheden melden
 

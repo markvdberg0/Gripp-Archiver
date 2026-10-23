@@ -4,6 +4,7 @@
 <div class="page-head">
     <div><h1>Relaties</h1><div class="sub">{{ $companies->total() }} {{ $companies->total() === 1 ? 'relatie' : 'relaties' }}</div></div>
     <div class="actions">
+        <a class="btn" href="{{ request()->fullUrlWithQuery(['export' => 'csv']) }}">CSV</a>
         @can('relaties.bewerken')<a class="btn btn-primary" href="{{ route('relaties.create') }}">Nieuwe relatie</a>@endcan
     </div>
 </div>

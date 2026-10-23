@@ -6,27 +6,33 @@ use App\Http\Requests\CompanyRequest;
 use App\Models\Company;
 use App\Models\Employee;
 use App\Models\TimelineEntry;
+use App\Support\Csv;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CompanyController extends Controller
 {
     private const SORT = ['name' => 'name', 'number' => 'number', 'city' => 'visit_city', 'created' => 'created_at'];
 
-    public function index(Request $request): View
+    public function index(Request $request): View|StreamedResponse
     {
         $sort = self::SORT[$request->query('sort')] ?? 'name';
         $dir = $request->query('dir') === 'desc' ? 'desc' : 'asc';
-        $companies = Company::query()
+        $query = Company::query()
             ->search($request->query('q'))
             ->when($request->query('rol'), fn ($q, $rol) => array_key_exists($rol, Company::ROLLEN) ? $q->where($rol, true) : $q)
             ->when($request->query('actief', '1') !== 'alle', fn ($q) => $q->where('active', $request->query('actief', '1') === '1'))
             ->with('accountManager')
             ->withCount('contacts')
-            ->orderBy($sort, $dir)->orderBy('id')
-            ->paginate(50)->withQueryString();
+            ->orderBy($sort, $dir)->orderBy('id');
+        if ($request->query('export') === 'csv') {
+            return Csv::download('relaties.csv', ['Nummer', 'Naam', 'Rollen', 'E-mail', 'Telefoon', 'Adres', 'Plaats', 'KvK', 'Btw-nummer', 'Accountmanager', 'Actief'],
+                $query->lazy()->map(fn (Company $c) => [$c->number, $c->name, implode(', ', $c->roleLabels()), $c->email, $c->phone, trim("{$c->visit_street} {$c->visit_house_number}"), $c->visit_city, $c->coc_number, $c->vat_number, $c->accountManager?->name, $c->active ? 'ja' : 'nee']));
+        }
+        $companies = $query->paginate(50)->withQueryString();
 
         return view('companies.index', compact('companies'));
     }

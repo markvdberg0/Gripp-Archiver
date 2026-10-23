@@ -6,3 +6,6 @@
 # Niet in de release-zip
 .github/ export-ignore
 .gitattributes export-ignore
+
+# Werkbank heeft een eigen installatie (Docker of Composer) en hoort niet in de zip van de back-uptool
+werkbank/ export-ignore

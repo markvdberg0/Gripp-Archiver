@@ -69,7 +69,7 @@ Niet in gebruik (0 records of geen rechten): afdelingen, jaardoelen, dossiers, o
 
 ## 5. Fasen
 
-Elke fase levert een werkende verticale doorsnede: migraties, bedrijfslogica, schermen, import en tests.
+Elke fase levert een werkende verticale doorsnede: migraties, bedrijfslogica, schermen, import en tests. **Stand: alle zes fasen zijn opgeleverd**; per fase staat in [voortgang.md](voortgang.md) wat werkt, hoe het getest is en wat ontbreekt.
 
 | Fase | Inhoud | Klaar als |
 |---|---|---|

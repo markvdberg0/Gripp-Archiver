@@ -38,7 +38,32 @@ Zonder pad wordt `WERKBANK_IMPORT_PATH` gebruikt.
 - **Niets wordt verwijderd.** Staat een record niet meer in de back-up, dan blijft het in Werkbank bestaan; het rapport noemt het aantal.
 - **Alles of niets.** De import is één databasetransactie. Mislukt er onderweg iets ernstigs, dan verandert er niets. Fouten in losse records worden gemeld en overgeslagen.
 - **Bijlagen** worden gekopieerd naar de eigen opslag en ontdubbeld op inhoud (SHA-256). Ontbreekt een bestand in het archief, dan blijft het record bestaan "zonder inhoud".
-- **Volgorde:** labels, medewerkers, bestanden, relaties, contactpersonen, timeline, en in latere fasen producten, offertes, opdrachten, facturen en inkoop. Verwijzingen naar records die (nog) niet bestaan worden leeg gelaten en gemeld.
+- **Afgeleide koppelingen** (bijvoorbeeld de opdracht van een factuur, uit de regels) worden ingevuld zonder dat het record als "lokaal gewijzigd" telt.
+- Verwijzingen naar records die niet bestaan worden leeg gelaten en gemeld.
+
+## Onderdelen
+
+In deze volgorde (de naam is wat je bij `--alleen` gebruikt):
+
+| Onderdeel | Gripp-bron | Werkbank |
+|---|---|---|
+| `tag`, `employee`, `file` | tag, employee, file | labels, medewerkers (zonder gevoelige gegevens), bestanden |
+| `company`, `contact` | company, contact | relaties, contactpersonen |
+| `unit`, `ledger`, `costheading` | unit, ledger, costheading | eenheden, grootboekrekeningen, kostenplaatsen |
+| `product`, `packet`, `packetline` | product, packet, packetline | producten, pakketten en regels |
+| `offerphase`, `offer`, `offerline` | offerphase, offer, offerprojectline (bij offertes) | offertefasen, offertes (incl. sjablonen) en regels |
+| `projectphase`, `project`, `projectline` | projectphase, project, offerprojectline (bij opdrachten) | opdrachtfasen, opdrachten en regels |
+| `tasktype`, `taskphase`, `task`, `calendaritem`, `hour` | idem | taaksoorten, taakfasen, taken, agenda-items, uren |
+| `contract`, `contractline` | idem | contracten en regels |
+| `invoice`, `invoiceline`, `payment` | idem | verkoopfacturen, regels, betalingen |
+| `purchaseorder`, `purchaseorderline` | idem | inkoopopdrachten en regels |
+| `purchaseinvoice`, `purchaseinvoiceline`, `purchasepayment` | idem | inkoopfacturen, regels, betalingen |
+| `memorial`, `memorialline`, `cost` | idem | memoriaal en kosten (alleen-lezen archief) |
+| `timelineentry` | timelineentry | timeline, gekoppeld aan relatie, contactpersoon en document |
+
+Btw-tarieven staan niet als tabel in Gripp; ze worden aangemaakt uit de verwijzingen op regels en producten, met het percentage uit de naam. Tarieven met "binnen EU", "buiten EU" of "verlegd" in de naam krijgen "btw verlegd".
+
+Nog niet overgenomen: verlof (absencerequest) en de onderdelen waarvoor de API-sleutel geen leesrechten had (afdelingen, jaardoelen, dossiers, omzetdoelen, staffelprijzen, overkoepelende projecten).
 
 ## Wat bewust niet wordt overgenomen
 
@@ -49,6 +74,20 @@ Zonder pad wordt `WERKBANK_IMPORT_PATH` gebruikt.
 
 Elke run krijgt een rapport (Beheer › Import › run) met per onderdeel: aantal in de bron, nieuw, gewijzigd, ongewijzigd, conflicten, overgeslagen, fouten en "niet meer in bron", plus controletotalen (aantallen en, vanaf fase 4, financiële totalen) en de eerste 200 meldingen per onderdeel. De run zelf wordt vastgelegd in het logboek.
 
+## Controles
+
+Na elke import vergelijkt Werkbank de bron met het resultaat:
+
+- aantal records per onderdeel;
+- som van de totalen van offertes, opdrachten, verkoopfacturen (ook openstaand), inkoopopdrachten, inkoopfacturen (ook openstaand) en kosten, en het totaal aantal uren;
+- per document of de regels optellen tot het totaal in Gripp (afwijkingen worden per document gemeld);
+- per factuur en inkoopfactuur of totaal − betalingen gelijk is aan het openstaande bedrag.
+
 ## Getest met
 
-De echte back-up van 15-10-2026 (fase 1: 5.065 records en 2.502 bijlagen): eerste import 23 seconden, tweede import 0,4 seconden met 0 nieuwe en 0 gewijzigde records.
+De echte back-up van 15-10-2026: 12.600 records en 2.502 bijlagen (plus 187 offerte-, 34 opdracht-, 156 inkoopopdracht- en 71 factuur-PDF's). Volledige eerste import in een lege database met lege bestandsopslag: 15 seconden, 2.950 bestanden opgeslagen (443 MB na ontdubbelen), 5 bijlagen zonder inhoud in de back-up. Herhaalde import: 1,5 seconde met 0 nieuwe en 0 gewijzigde records. (Gemeten op een Windows-laptop met SQLite.) Alle controles kloppen, op twee afrondingsverschillen van 2 en 3 cent na die in Gripp zelf zitten (één inkoopopdracht en één inkoopfactuur); die staan als melding in het rapport.
+
+## Overzichten na de import
+
+- *Openstaande debiteuren* telt alle definitieve verkoopfacturen en sluit aan op het openstaande totaal van de back-up.
+- *Openstaande crediteuren* telt geen conceptinkoopfacturen (nog niet geboekt). Het totaal is daardoor lager dan "openstaand" in het importrapport, dat alle inkoopfacturen telt; het verschil is het openstaande bedrag van de concepten.

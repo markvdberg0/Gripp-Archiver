@@ -39,6 +39,7 @@
             ['beheer.instellingen.edit', 'Instellingen', 'beheer.instellingen', 'beheer.instellingen.*'],
             ['beheer.gebruikers.index', 'Gebruikers', 'beheer.gebruikers', 'beheer.gebruikers.*'],
             ['beheer.import.index', 'Import', 'beheer.import', 'beheer.import.*'],
+            ['beheer.backups.index', 'Back-ups', 'beheer.import', 'beheer.backups.*'],
             ['beheer.logboek', 'Logboek', 'beheer.auditlog', 'beheer.logboek'],
         ],
     ];

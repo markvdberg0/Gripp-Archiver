@@ -13,6 +13,9 @@
             <a class="btn btn-primary" href="{{ route('contactpersonen.edit', $contact) }}">Wijzigen</a>
             <form method="post" action="{{ route('contactpersonen.destroy', $contact) }}" class="inline" data-confirm="Contactpersoon verwijderen?">@csrf @method('delete')<button class="btn btn-danger" type="submit">Verwijderen</button></form>
         @endcan
+        @can('beheer.gebruikers')
+            <form method="post" action="{{ route('contactpersonen.anonimiseren', $contact) }}" class="inline" data-confirm="Persoonsgegevens van deze contactpersoon definitief wissen (AVG)? Dit kan niet ongedaan worden gemaakt, behalve met een oudere back-up.">@csrf<button class="btn btn-danger" type="submit">Anonimiseren (AVG)</button></form>
+        @endcan
     </div>
 </div>
 <div class="grid grid-side">

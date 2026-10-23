@@ -14,6 +14,7 @@ use App\Models\Unit;
 use App\Models\VatRate;
 use App\Support\Audit;
 use App\Support\Bedragen;
+use App\Support\Csv;
 use App\Support\Regels;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
@@ -23,6 +24,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class InvoiceController extends Controller
 {
@@ -30,7 +32,7 @@ class InvoiceController extends Controller
 
     private const LINE_EXTRA = ['ledger_id', 'cost_center_id', 'project_id', 'project_line_id'];
 
-    public function index(Request $request): View
+    public function index(Request $request): View|StreamedResponse
     {
         $sort = self::SORT[$request->query('sort')] ?? 'number';
         $dir = $request->query('dir', $request->has('sort') ? 'asc' : 'desc') === 'desc' ? 'desc' : 'asc';
@@ -38,6 +40,10 @@ class InvoiceController extends Controller
             ->when($request->query('relatie'), fn ($q, $c) => $q->where('company_id', $c))
             ->when($request->query('opdracht'), fn ($q, $p) => $q->where('project_id', $p))
             ->when($request->query('jaar'), fn ($q, $y) => $q->whereYear('date', (int) $y));
+        if ($request->query('export') === 'csv') {
+            return Csv::download('verkoopfacturen.csv', ['Nummer', 'Datum', 'Vervaldatum', 'Relatie', 'Onderwerp', 'Status', 'Excl. btw', 'Btw', 'Incl. btw', 'Betaald', 'Openstaand'],
+                (clone $base)->with('company')->orderByDesc('number')->lazy()->map(fn (Invoice $i) => [$i->number, $i->date, $i->due_date, $i->company?->name, $i->subject, $i->stateLabel(), $i->total_excl, $i->total_vat, $i->total_incl, $i->total_paid, $i->total_open]));
+        }
         $sum = (clone $base)->selectRaw('count(*) as n, coalesce(sum(total_excl),0) as excl, coalesce(sum(total_incl),0) as incl, coalesce(sum(case when status <> ? then total_open else 0 end),0) as open', ['concept'])->toBase()->first();
         // Concepten (zonder nummer) bovenaan bij aflopend nummer.
         $invoices = $base->with('company')->when($sort === 'number', fn ($q) => $q->orderByRaw('number is null '.$dir))
