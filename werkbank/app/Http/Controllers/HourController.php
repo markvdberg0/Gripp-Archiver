@@ -25,7 +25,7 @@ class HourController extends Controller
         $employee = $this->employee($request);
         $week = $this->week($request);
         $hours = $employee ? Hour::with(['project', 'projectLine', 'offer'])->where('employee_id', $employee->id)
-            ->whereBetween('date', [$week->toDateString(), $week->addDays(6)->toDateString()])->orderBy('date')->orderBy('id')->get() : collect();
+            ->whereDate('date', '>=', $week->toDateString())->whereDate('date', '<=', $week->addDays(6)->toDateString())->orderBy('date')->orderBy('id')->get() : collect();
         $projectId = $request->integer('project_id') ?: null;
 
         return view('hours.index', [
@@ -68,7 +68,7 @@ class HourController extends Controller
         $employee = $this->employee($request) ?? abort(422);
         $week = $this->week($request);
         $n = Hour::where('employee_id', $employee->id)->where('status', 'concept')
-            ->whereBetween('date', [$week->toDateString(), $week->addDays(6)->toDateString()])->update(['status' => 'definitief', 'updated_at' => now()]);
+            ->whereDate('date', '>=', $week->toDateString())->whereDate('date', '<=', $week->addDays(6)->toDateString())->update(['status' => 'definitief', 'updated_at' => now()]);
         Audit::log('uren_ingediend', null, "{$n} regel(s) van {$employee->name}, week ".$week->isoWeek());
 
         return back()->with('status', "{$n} regel(s) definitief gemaakt.");

@@ -31,6 +31,8 @@ final class Rechten
         'taken.bewerken' => 'Taken maken en afronden',
         'uren.schrijven' => 'Eigen uren schrijven',
         'uren.fiatteren' => 'Uren van anderen bekijken en fiatteren',
+        'verlof.aanvragen' => 'Eigen verlof aanvragen',
+        'verlof.fiatteren' => 'Verlof van iedereen bekijken en goedkeuren',
         'facturen.bekijken' => 'Verkoopfacturen bekijken',
         'facturen.bewerken' => 'Verkoopfacturen maken, verzenden en betalingen registreren',
         'inkoop.bekijken' => 'Inkoopopdrachten en inkoopfacturen bekijken',
@@ -46,15 +48,15 @@ final class Rechten
     private const MATRIX = [
         'beheerder' => ['*'],
         'administratie' => [
-            'relaties.*', 'producten.*', 'offertes.*', 'opdrachten.*', 'taken.bewerken', 'uren.schrijven', 'uren.fiatteren',
+            'relaties.*', 'producten.*', 'offertes.*', 'opdrachten.*', 'taken.bewerken', 'uren.schrijven', 'uren.fiatteren', 'verlof.*',
             'facturen.*', 'inkoop.*', 'rapporten.bekijken', 'beheer.instellingen', 'beheer.auditlog',
         ],
         'projectleider' => [
             'relaties.bekijken', 'relaties.bewerken', 'producten.bekijken', 'offertes.*', 'opdrachten.*', 'taken.bewerken',
-            'uren.schrijven', 'uren.fiatteren', 'facturen.bekijken', 'inkoop.bekijken', 'inkoop.bewerken', 'rapporten.bekijken',
+            'uren.schrijven', 'uren.fiatteren', 'facturen.bekijken', 'inkoop.bekijken', 'inkoop.bewerken', 'rapporten.bekijken', 'verlof.aanvragen',
         ],
         'medewerker' => [
-            'relaties.bekijken', 'producten.bekijken', 'offertes.bekijken', 'opdrachten.bekijken', 'taken.bewerken', 'uren.schrijven',
+            'relaties.bekijken', 'producten.bekijken', 'offertes.bekijken', 'opdrachten.bekijken', 'taken.bewerken', 'uren.schrijven', 'verlof.aanvragen',
         ],
         'alleen_lezen' => [
             'relaties.bekijken', 'producten.bekijken', 'offertes.bekijken', 'opdrachten.bekijken', 'facturen.bekijken',

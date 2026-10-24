@@ -161,7 +161,7 @@ Per fase: wat werkt aantoonbaar, hoe is het getest, welke beperkingen zijn er en
 - Terugzetten alleen via de opdrachtregel (bewust).
 - De `APP_KEY` zit niet in de back-up; bewaar die apart.
 - Geen winst-en-verliesrekening, balans of btw-aangifte (geen boekhouding, aanname 1).
-- Verlof is niet overgenomen.
+- Verlof is niet overgenomen (inmiddels toegevoegd, zie Uitbreidingen).
 
 ## Codereview
 
@@ -192,7 +192,7 @@ Werkbank dekt nu de processen die in de Gripp-data aantoonbaar gebruikt worden: 
 | UBL/e-factuur, SEPA-bestanden, bankkoppeling | Ontbreekt |
 | Agenda-koppeling, sleep-en-zet-planning | Ontbreekt; weekoverzicht met invoer |
 | Nacalculatie in euro's (kostprijs per medewerker) | Ontbreekt; alleen uren |
-| Verlof | Niet overgenomen |
+| Verlof | Beschikbaar: aanvragen, goedkeuren, saldo en planning; geen ziekteverzuim, feestdagen of meenemen van restsaldo |
 | Voorraad | Alleen de Gripp-velden als vrije velden |
 | Relaties samenvoegen (dubbele relaties) | Beschikbaar, met opsporing op naam, KvK, btw en IBAN; niet ongedaan te maken (alleen via back-up) |
 | Wachtwoordherstel per e-mail | Beschikbaar |
@@ -220,3 +220,10 @@ Deze punten zijn de logische volgende stappen; welke daarvan nodig zijn, hangt a
 - **Werkt:** onder Account › Tweestapsverificatie instellen met een QR-code (eigen TOTP-implementatie volgens RFC 6238, QR via `bacon/bacon-qr-code`), herstelcodes, vernieuwen en uitzetten met het huidige wachtwoord. Bij inloggen volgt na het wachtwoord de code. Een beheerder kan het verplicht stellen en voor een gebruiker uitzetten.
 - **Getest:** `tests/Feature/TwoFactorTest.php`, onder meer met de officiële RFC 6238-testvector, het weigeren van een hergebruikte code, eenmalige herstelcodes, maximaal aantal pogingen en verlopen, en de rechten op de verplichting.
 - **Beperkingen:** geen WebAuthn of passkeys, en geen "dit apparaat onthouden".
+
+### Verlof
+
+- **Werkt:** onder Planning › Verlof vraagt een medewerker verlof aan voor een periode (werkdagen, uren per dag); weekenden worden overgeslagen en overlap met een lopende aanvraag wordt geweigerd. De administratie keurt goed of wijst af (met reden), nooit het eigen verlof, en de medewerker krijgt een mail. Jaarsaldo per medewerker (standaard 160 uur, per medewerker aan te passen); alleen vakantie en vrije dagen tellen mee. Verlof staat in de weekplanning, zonder reden of omschrijving. Intrekken kan tot de eerste dag. De 3 verlofaanvragen uit de echte back-up zijn overgenomen, met status "onbekend" omdat Gripp er geen dagen bij leverde.
+- **Getest:** `tests/Feature/LeaveTest.php` (weekend en overlap, saldo, goedkeuren en afwijzen, vier ogen, zichtbaarheid per rol, planning, import inclusief statusovergang en ziekmelding).
+- **Opgelost bij het bouwen:** op SQLite vielen uren en agenda-items op zondag buiten de weekweergave, en "week indienen" sloeg zondaguren over. Regressietest: `ProjectTest::test_zondag_hoort_bij_de_week`.
+- **Beperkingen:** geen ziekteverzuim (bewust: gezondheidsgegevens), geen feestdagenkalender, geen meenemen van restsaldo naar het volgende jaar, geen halve dagen met begin- en eindtijd. De veldnamen van verlofdagen in Gripp zijn aangenomen (zie [import.md](import.md)).

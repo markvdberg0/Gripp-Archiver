@@ -52,6 +52,7 @@ class EmployeeController extends Controller
             'mobile' => ['nullable', 'string', 'max:40'],
             'function' => ['nullable', 'string', 'max:100'],
             'employed_since' => ['nullable', 'date'],
+            'leave_hours_per_year' => ['nullable', 'numeric', 'between:0,2000'],
             'active' => ['boolean'],
         ], [], ['last_name' => 'achternaam']);
     }

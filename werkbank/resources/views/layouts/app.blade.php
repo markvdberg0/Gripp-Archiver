@@ -24,6 +24,7 @@
             ['taken.index', 'Taken', 'opdrachten.bekijken', 'taken.*'],
             ['planning.index', 'Planning', 'opdrachten.bekijken', 'planning.*'],
             ['uren.index', 'Uren', 'uren.schrijven', 'uren.*'],
+            ['verlof.index', 'Verlof', 'verlof.aanvragen', 'verlof.*'],
         ],
         'Financieel' => [
             ['facturen.index', 'Verkoopfacturen', 'facturen.bekijken', 'facturen.*'],

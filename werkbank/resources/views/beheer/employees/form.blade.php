@@ -16,6 +16,7 @@
             <x-veld name="phone" label="Telefoon (werk)" :value="$employee->phone" />
             <x-veld name="mobile" label="Mobiel (werk)" :value="$employee->mobile" />
             <x-veld name="employed_since" label="In dienst sinds" type="date" :value="$employee->employed_since" />
+            <x-veld name="leave_hours_per_year" label="Verlofuren per jaar" type="number" step="0.5" :value="$employee->leave_hours_per_year" hint="Leeg = standaard uit de instellingen." />
         </div>
         <x-vink name="active" label="Actief" :checked="$employee->active" />
         <p class="muted small">Werkbank slaat bewust geen BSN, bankgegevens of privéadres van medewerkers op. Die horen in de salarisadministratie.</p>

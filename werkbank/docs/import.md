@@ -66,7 +66,9 @@ In deze volgorde (de naam is wat je bij `--alleen` gebruikt):
 
 Btw-tarieven staan niet als tabel in Gripp; ze worden aangemaakt uit de verwijzingen op regels en producten, met het percentage uit de naam. Tarieven met "binnen EU", "buiten EU" of "verlegd" in de naam krijgen "btw verlegd".
 
-Nog niet overgenomen: verlof (absencerequest) en de onderdelen waarvoor de API-sleutel geen leesrechten had (afdelingen, jaardoelen, dossiers, omzetdoelen, staffelprijzen, overkoepelende projecten).
+Verlof (absencerequest en absencerequestline) wordt overgenomen, behalve ziekmeldingen (gezondheidsgegevens). Een aanvraag krijgt de status van haar dagen; zonder dagen is de status "onbekend". De veldnamen van de dagen (`date`, `amount`) zijn volgens de Gripp-API aangenomen: de echte back-up bevatte geen dagen om ze aan te toetsen.
+
+Nog niet overgenomen: de onderdelen waarvoor de API-sleutel geen leesrechten had (afdelingen, jaardoelen, dossiers, omzetdoelen, staffelprijzen, overkoepelende projecten).
 
 ## Wat bewust niet wordt overgenomen
 

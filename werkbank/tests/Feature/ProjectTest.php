@@ -178,4 +178,19 @@ class ProjectTest extends TestCase
         $this->get('/opdrachten')->assertOk();
         $this->get('/opdrachten/create')->assertForbidden();
     }
+
+    public function test_zondag_hoort_bij_de_week(): void
+    {
+        $user = User::factory()->role('medewerker')->create();
+        $me = Employee::factory()->create(['user_id' => $user->id]);
+        $project = Project::factory()->create();
+        $this->actingAs($user);
+        $this->post('/uren', ['date' => '2026-10-25', 'project_id' => $project->id, 'hours' => '3', 'description' => 'Zondagwerk'])->assertRedirect();
+        CalendarItem::create(['employee_id' => $me->id, 'date' => '2026-10-25', 'hours' => 2, 'subject' => 'Storingsdienst']);
+
+        $this->get('/uren?week=2026-10-19')->assertOk()->assertSee('Zondagwerk');
+        $this->post('/uren/indienen', ['week' => '2026-10-19'])->assertRedirect();
+        $this->assertSame('definitief', Hour::firstOrFail()->status);
+        $this->get('/planning?week=2026-10-19')->assertOk()->assertSee('Storingsdienst');
+    }
 }

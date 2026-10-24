@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\HourController;
+use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\PlanningController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TaskController;
@@ -35,6 +36,16 @@ Route::middleware('can:uren.schrijven')->group(function () {
     Route::put('/uren/{uur}', [HourController::class, 'update'])->name('uren.update');
     Route::delete('/uren/{uur}', [HourController::class, 'destroy'])->name('uren.destroy');
     Route::post('/uren/indienen', [HourController::class, 'submit'])->name('uren.indienen');
+});
+Route::middleware('can:verlof.aanvragen')->group(function () {
+    Route::get('/verlof', [LeaveController::class, 'index'])->name('verlof.index');
+    Route::get('/verlof/aanvragen', [LeaveController::class, 'create'])->name('verlof.create');
+    Route::post('/verlof', [LeaveController::class, 'store'])->name('verlof.store');
+    Route::post('/verlof/{verlof}/intrekken', [LeaveController::class, 'withdraw'])->name('verlof.intrekken');
+});
+Route::middleware('can:verlof.fiatteren')->group(function () {
+    Route::get('/verlof/goedkeuren', [LeaveController::class, 'approvals'])->name('verlof.fiatteren');
+    Route::post('/verlof/{verlof}/beslissen', [LeaveController::class, 'decide'])->name('verlof.beslissen');
 });
 Route::middleware('can:uren.fiatteren')->group(function () {
     Route::get('/uren/fiatteren', [HourController::class, 'approvals'])->name('uren.fiatteren');

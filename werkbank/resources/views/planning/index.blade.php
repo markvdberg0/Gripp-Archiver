@@ -20,6 +20,11 @@
                 @foreach ($days as $d)
                     @php $cell = $grid[$e->id.'|'.$d->toDateString()] ?? collect(); @endphp
                     <td style="min-width:110px">
+                        @foreach ($leave[$e->id.'|'.$d->toDateString()] ?? [] as $l)
+                            <div class="small" style="margin-bottom:4px;padding:3px 6px;border-radius:5px;background:{{ $l['status'] === 'goedgekeurd' ? 'var(--warn-soft)' : 'transparent;border:1px dashed var(--line)' }}">
+                                Verlof {{ Format::number($l['hours']) }} u{{ $l['status'] === 'aangevraagd' ? ' (aangevraagd)' : '' }}
+                            </div>
+                        @endforeach
                         @foreach ($cell as $i)
                             <div class="small" style="margin-bottom:4px;padding:3px 6px;border-radius:5px;background:var(--accent-soft)">
                                 {{ $i->start_time ? substr($i->start_time, 0, 5).' · ' : '' }}{{ Format::number($i->hours) }} u

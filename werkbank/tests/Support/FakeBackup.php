@@ -52,6 +52,8 @@ class FakeBackup
 
         return [
             'tag' => [['id' => 1, 'name' => 'Zwolle', 'searchname' => 'Zwolle'], ['id' => 2, 'name' => 'Groot', 'searchname' => 'Groot']],
+            'absencerequest' => [],
+            'absencerequestline' => [],
             'employee' => [
                 ['id' => 100, 'firstname' => 'Jan', 'lastname' => 'Jansen', 'searchname' => 'Jan Jansen', 'email' => 'jan@example.test', 'active' => true, 'number' => 1,
                     'username' => 'jan', 'password' => '$2y$10$geheimehash', 'socialsecuritynumber' => '123456782', 'bankaccount' => 'NL00BANK0123456789', 'createdon' => $d('2024-01-02')],

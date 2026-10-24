@@ -34,6 +34,7 @@ class SettingsController extends Controller
         'nummer.boeknummer' => ['nullable', 'integer', 'min:1'],
         'inkoop.vier_ogen_drempel' => ['required', 'numeric', 'min:0'],
         'beveiliging.tweestaps_verplicht' => ['boolean'],
+        'verlof.uren_per_jaar' => ['nullable', 'numeric', 'between:0,2000'],
         'mail.offerte.onderwerp' => ['nullable', 'string', 'max:255'],
         'mail.offerte.tekst' => ['nullable', 'string', 'max:5000'],
         'mail.factuur.onderwerp' => ['nullable', 'string', 'max:255'],

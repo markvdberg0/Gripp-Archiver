@@ -45,6 +45,8 @@ final class Importer
         Mappers\TaskMapper::class,
         Mappers\CalendarItemMapper::class,
         Mappers\HourMapper::class,
+        Mappers\AbsenceRequestMapper::class,
+        Mappers\AbsenceRequestLineMapper::class,
         Mappers\ContractMapper::class,
         Mappers\ContractLineMapper::class,
         Mappers\InvoiceMapper::class,

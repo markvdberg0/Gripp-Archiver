@@ -51,6 +51,9 @@
                     <p class="small">Vier-ogendrempel: € {{ $values['inkoop__vier_ogen_drempel'] }} incl. btw. Alleen een beheerder kan dit wijzigen.</p>
                 @endcan
             </fieldset>
+            <fieldset><legend>Verlof</legend>
+                <x-veld name="verlof__uren_per_jaar" label="Verlofuren per jaar (standaard)" type="number" step="0.5" :value="$values['verlof__uren_per_jaar']" hint="Per medewerker aan te passen. Wettelijk minimum: 4 × de wekelijkse arbeidsduur (160 uur bij 40 uur per week)." />
+            </fieldset>
             <fieldset><legend>Beveiliging</legend>
                 @can('beheer.gebruikers')
                     <x-vink name="beveiliging__tweestaps_verplicht" label="Tweestapsverificatie verplicht voor alle gebruikers" :checked="(bool) $values['beveiliging__tweestaps_verplicht']" hint="Gebruikers zonder tweestapsverificatie moeten die eerst instellen voordat ze verder kunnen." />
