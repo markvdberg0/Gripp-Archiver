@@ -33,6 +33,7 @@ class SettingsController extends Controller
         'nummer.inkoopopdracht' => ['nullable', 'integer', 'min:1'],
         'nummer.boeknummer' => ['nullable', 'integer', 'min:1'],
         'inkoop.vier_ogen_drempel' => ['required', 'numeric', 'min:0'],
+        'beveiliging.tweestaps_verplicht' => ['boolean'],
         'mail.offerte.onderwerp' => ['nullable', 'string', 'max:255'],
         'mail.offerte.tekst' => ['nullable', 'string', 'max:5000'],
         'mail.factuur.onderwerp' => ['nullable', 'string', 'max:255'],
@@ -56,10 +57,10 @@ class SettingsController extends Controller
     {
         // Punten in veldnamen vervangen door __ (Laravel leest punten als geneste arrays).
         $rules = collect(self::RULES)->mapWithKeys(fn ($r, $k) => [str_replace('.', '__', $k) => $r])->all();
-        // De vier-ogendrempel controleert juist wie inkoopfacturen goedkeurt (administratie); alleen een
-        // beheerder mag hem wijzigen.
+        // Beveiligingsinstellingen en de vier-ogendrempel (die controleert juist wie inkoopfacturen goedkeurt,
+        // de administratie) mag alleen een beheerder wijzigen.
         if (! $request->user()->can('beheer.gebruikers')) {
-            unset($rules['inkoop__vier_ogen_drempel']);
+            unset($rules['inkoop__vier_ogen_drempel'], $rules['beveiliging__tweestaps_verplicht']);
         }
         $data = $request->validate($rules);
         Setting::put(collect($data)->only(array_keys($rules))->mapWithKeys(fn ($v, $k) => [str_replace('__', '.', $k) => $v ?? ''])->all());

@@ -15,7 +15,7 @@ final class Audit
     /** Tijdens een import worden losse wijzigingen niet gelogd; de importrun zelf wel (met samenvatting). */
     public static bool $muted = false;
 
-    private const WEGLATEN = ['updated_at', 'created_at', 'gripp_hash', 'gripp_synced_at', 'remember_token'];
+    private const WEGLATEN = ['updated_at', 'created_at', 'gripp_hash', 'gripp_synced_at', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_last_step'];
 
     private const MASKEREN = ['password', 'iban', 'bic', 'bank_account_holder'];
 

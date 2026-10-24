@@ -11,11 +11,14 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\MailController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\TwoFactorController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
     Route::get('/inloggen', [LoginController::class, 'create'])->name('login');
     Route::post('/inloggen', [LoginController::class, 'store'])->middleware('throttle:login');
+    Route::get('/inloggen/tweestaps', [LoginController::class, 'challenge'])->name('login.tweestaps');
+    Route::post('/inloggen/tweestaps', [LoginController::class, 'verify'])->middleware('throttle:10,1');
     Route::get('/wachtwoord-vergeten', [PasswordResetController::class, 'request'])->name('password.request');
     Route::post('/wachtwoord-vergeten', [PasswordResetController::class, 'email'])->name('password.email')->middleware('throttle:5,1');
     Route::get('/wachtwoord-herstellen/{token}', [PasswordResetController::class, 'reset'])->name('password.reset');
@@ -26,6 +29,10 @@ Route::middleware(['auth', 'account'])->group(function () {
     Route::post('/uitloggen', [LoginController::class, 'destroy'])->name('logout');
     Route::get('/account', [AccountController::class, 'edit'])->name('account.edit');
     Route::put('/account', [AccountController::class, 'update'])->name('account.update');
+    Route::get('/account/tweestaps', [TwoFactorController::class, 'show'])->name('account.tweestaps');
+    Route::post('/account/tweestaps', [TwoFactorController::class, 'store'])->name('account.tweestaps.store')->middleware('throttle:10,1');
+    Route::post('/account/tweestaps/herstelcodes', [TwoFactorController::class, 'codes'])->name('account.tweestaps.codes')->middleware('throttle:10,1');
+    Route::delete('/account/tweestaps', [TwoFactorController::class, 'destroy'])->name('account.tweestaps.destroy')->middleware('throttle:10,1');
 
     Route::get('/', DashboardController::class)->name('dashboard');
     Route::get('/zoeken', SearchController::class)->name('zoeken');
@@ -60,6 +67,7 @@ Route::middleware(['auth', 'account'])->group(function () {
         Route::middleware('can:beheer.gebruikers')->group(function () {
             Route::resource('gebruikers', Beheer\UserController::class)->except(['show', 'destroy'])->parameters(['gebruikers' => 'gebruiker']);
             Route::post('/gebruikers/{gebruiker}/wachtwoord', [Beheer\UserController::class, 'resetPassword'])->name('gebruikers.wachtwoord');
+            Route::post('/gebruikers/{gebruiker}/tweestaps', [Beheer\UserController::class, 'resetTwoFactor'])->name('gebruikers.tweestaps');
         });
         Route::middleware('can:beheer.instellingen')->group(function () {
             Route::resource('medewerkers', Beheer\EmployeeController::class)->except(['show', 'destroy'])->parameters(['medewerkers' => 'medewerker']);

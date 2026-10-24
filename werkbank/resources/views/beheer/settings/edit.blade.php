@@ -51,6 +51,13 @@
                     <p class="small">Vier-ogendrempel: € {{ $values['inkoop__vier_ogen_drempel'] }} incl. btw. Alleen een beheerder kan dit wijzigen.</p>
                 @endcan
             </fieldset>
+            <fieldset><legend>Beveiliging</legend>
+                @can('beheer.gebruikers')
+                    <x-vink name="beveiliging__tweestaps_verplicht" label="Tweestapsverificatie verplicht voor alle gebruikers" :checked="(bool) $values['beveiliging__tweestaps_verplicht']" hint="Gebruikers zonder tweestapsverificatie moeten die eerst instellen voordat ze verder kunnen." />
+                @else
+                    <p class="small">Tweestapsverificatie is {{ $values['beveiliging__tweestaps_verplicht'] ? 'verplicht' : 'niet verplicht' }}. Alleen een beheerder kan dit wijzigen.</p>
+                @endcan
+            </fieldset>
         </div>
     </div>
     <fieldset><legend>E-mailteksten</legend>

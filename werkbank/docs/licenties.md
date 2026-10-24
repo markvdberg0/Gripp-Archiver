@@ -9,6 +9,7 @@ Overzicht gemaakt met `composer licenses --no-dev`. Alle licenties staan opensou
 | Licentie | Pakketten | Toelichting |
 |---|---|---|
 | MIT | 73, waaronder `laravel/framework`, `symfony/*`, `nesbot/carbon`, `monolog/monolog`, `guzzlehttp/*`, `league/flysystem`, `barryvdh/laravel-dompdf`, `symfony/html-sanitizer` | Vrij te gebruiken, met behoud van de copyrightvermelding. |
+| BSD-2-Clause | `bacon/bacon-qr-code`, `dasprid/enum` | QR-code voor tweestapsverificatie. Vergelijkbaar met MIT. |
 | BSD-3-Clause | `league/commonmark`, `league/config`, `nikic/php-parser`, `tijsverkoyen/css-to-inline-styles`, `vlucas/phpdotenv` | Vergelijkbaar met MIT. |
 | BSD-3-Clause / GPL-2.0 / GPL-3.0 (naar keuze) | `nette/schema`, `nette/utils` | Gebruikt onder BSD-3-Clause. |
 | Apache-2.0 | `phpoption/phpoption` | Vrij te gebruiken; behoud NOTICE/vermelding. |

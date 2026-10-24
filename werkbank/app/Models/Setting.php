@@ -24,6 +24,7 @@ class Setting extends Model
         'offerte.geldigheid_dagen' => '30', 'offerte.voettekst' => '', 'factuur.betaaltermijn' => '30', 'factuur.voettekst' => '',
         'nummer.offerte' => '', 'nummer.opdracht' => '', 'nummer.factuur' => '', 'nummer.inkoopopdracht' => '', 'nummer.boeknummer' => '',
         'inkoop.vier_ogen_drempel' => '2500',
+        'beveiliging.tweestaps_verplicht' => '0',
         // E-mailteksten. Plaatshouders: {nummer} {omschrijving} {relatie} {contactpersoon} {bedrag} {openstaand} {vervaldatum} {bedrijf} {afzender}
         'mail.offerte.onderwerp' => 'Offerte {nummer}: {omschrijving}',
         'mail.offerte.tekst' => "Beste {contactpersoon},\n\nHierbij ontvangt u onze offerte {nummer} voor {omschrijving}. U vindt de offerte als PDF in de bijlage.\n\nHeeft u vragen, neem dan gerust contact met ons op.\n\nMet vriendelijke groet,\n\n{afzender}\n{bedrijf}",

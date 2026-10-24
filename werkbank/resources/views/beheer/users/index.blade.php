@@ -17,7 +17,7 @@
                 <td>{{ $u->roleLabel() }}</td>
                 <td>{{ $u->employee?->name }}</td>
                 <td>{{ Format::dateTime($u->last_login_at) ?: '—' }}</td>
-                <td>@if ($u->active)<span class="badge badge-ok">actief</span>@else<span class="badge">inactief</span>@endif @if ($u->must_change_password)<span class="badge badge-warn">tijdelijk wachtwoord</span>@endif</td>
+                <td>@if ($u->active)<span class="badge badge-ok">actief</span>@else<span class="badge">inactief</span>@endif @if ($u->must_change_password)<span class="badge badge-warn">tijdelijk wachtwoord</span>@endif @if ($u->hasTwoFactor())<span class="badge">2FA</span>@endif</td>
             </tr>
         @endforeach
         </tbody>

@@ -74,6 +74,16 @@ class UserController extends Controller
         return back()->with('status', "Nieuw tijdelijk wachtwoord voor {$gebruiker->name} (wordt maar één keer getoond): {$password}");
     }
 
+    /** Telefoon kwijt en geen herstelcodes: de beheerder zet tweestapsverificatie uit; de gebruiker stelt hem opnieuw in. */
+    public function resetTwoFactor(User $gebruiker): RedirectResponse
+    {
+        $gebruiker->disableTwoFactor();
+        DB::table('sessions')->where('user_id', $gebruiker->id)->delete();
+        Audit::log('tweestaps_reset', $gebruiker, $gebruiker->email);
+
+        return back()->with('status', "Tweestapsverificatie van {$gebruiker->name} staat uit. Laat de gebruiker hem na het inloggen opnieuw instellen.");
+    }
+
     private function validated(Request $request, ?User $user = null): array
     {
         $data = $request->validate([

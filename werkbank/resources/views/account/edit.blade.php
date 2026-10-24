@@ -16,6 +16,13 @@
         </div>
     </div>
     <div class="card">
+        <div class="card-h"><h2>Tweestapsverificatie</h2>@if ($user->hasTwoFactor())<span class="badge badge-ok">aan</span>@else<span class="badge">uit</span>@endif</div>
+        <div class="card-b">
+            <p class="small">Naast je wachtwoord een code uit een app op je telefoon. Zo kan niemand inloggen met alleen een gestolen wachtwoord.</p>
+            <a class="btn" href="{{ route('account.tweestaps') }}">{{ $user->hasTwoFactor() ? 'Beheren' : 'Instellen' }}</a>
+        </div>
+    </div>
+    <div class="card">
         <div class="card-h"><h2>Rol en rechten</h2><span class="badge badge-accent">{{ $user->roleLabel() }}</span></div>
         <div class="card-b">
             <ul class="small" style="margin:0;padding-left:18px">

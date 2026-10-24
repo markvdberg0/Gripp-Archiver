@@ -23,6 +23,17 @@
             <form method="post" action="{{ route('beheer.gebruikers.wachtwoord', $user) }}" data-confirm="Nieuw tijdelijk wachtwoord maken?">@csrf<button class="btn" type="submit">Nieuw tijdelijk wachtwoord</button></form>
         </div>
     </div>
+    <div class="card">
+        <div class="card-h"><h2>Tweestapsverificatie</h2>@if ($user->hasTwoFactor())<span class="badge badge-ok">aan</span>@else<span class="badge">uit</span>@endif</div>
+        <div class="card-b">
+            @if ($user->hasTwoFactor())
+                <p class="small">Telefoon kwijt en geen herstelcodes meer? Zet tweestapsverificatie uit; de gebruiker wordt overal uitgelogd en stelt hem daarna opnieuw in. Controleer eerst of het verzoek echt van deze persoon komt.</p>
+                <form method="post" action="{{ route('beheer.gebruikers.tweestaps', $user) }}" data-confirm="Tweestapsverificatie van deze gebruiker uitzetten?">@csrf<button class="btn btn-danger" type="submit">Tweestapsverificatie uitzetten</button></form>
+            @else
+                <p class="small">De gebruiker zet dit zelf aan onder Account › Tweestapsverificatie.</p>
+            @endif
+        </div>
+    </div>
     @endif
 </div>
 @endsection

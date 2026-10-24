@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Setting;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,6 +25,9 @@ class EnsureAccountIsUsable
         }
         if ($user && $user->must_change_password && ! $request->routeIs('account.*', 'logout')) {
             return redirect()->route('account.edit')->with('warning', 'Kies eerst een eigen wachtwoord.');
+        }
+        if ($user && ! $user->hasTwoFactor() && Setting::get('beveiliging.tweestaps_verplicht') && ! $request->routeIs('account.*', 'logout')) {
+            return redirect()->route('account.tweestaps')->with('warning', 'Stel eerst tweestapsverificatie in; dat is verplicht gesteld door de beheerder.');
         }
 
         return $next($request);
