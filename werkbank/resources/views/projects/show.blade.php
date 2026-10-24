@@ -14,6 +14,7 @@
     </div>
     <div class="actions">
         <a class="btn" href="{{ route('opdrachten.pdf', $project) }}" target="_blank" rel="noopener">Opdrachtbevestiging (PDF)</a>
+        @can('opdrachten.bewerken')<a class="btn" href="{{ route('mail.create', ['opdracht', $project->id]) }}">E-mailen</a>@endcan
         @can('facturen.bewerken')@if (Route::has('facturen.create'))
             <a class="btn" href="{{ route('facturen.create', ['project_id' => $project->id]) }}" title="Voorstel met de nog niet gefactureerde regels">Factuur maken</a>
             <form method="get" action="{{ route('facturen.create') }}" class="inline actions"><input type="hidden" name="project_id" value="{{ $project->id }}"><input type="text" inputmode="decimal" name="percentage" placeholder="%" aria-label="Termijnpercentage" style="width:60px"><button class="btn" type="submit">Termijnfactuur</button></form>

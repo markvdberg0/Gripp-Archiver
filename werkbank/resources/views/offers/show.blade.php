@@ -15,6 +15,7 @@
     <div class="actions">
         <a class="btn" href="{{ route('offertes.pdf', $offer) }}" target="_blank" rel="noopener">PDF</a>
         @can('offertes.bewerken')
+            @unless ($offer->is_template)<a class="btn" href="{{ route('mail.create', ['offerte', $offer->id]) }}">E-mailen</a>@endunless
             @if ($offer->isEditable())<a class="btn btn-primary" href="{{ route('offertes.edit', $offer) }}">Wijzigen</a>@endif
             <form method="post" action="{{ route('offertes.kopie', $offer) }}" class="inline">@csrf<button class="btn {{ $offer->is_template ? 'btn-primary' : '' }}" type="submit">{{ $offer->is_template ? 'Nieuwe offerte op basis van dit sjabloon' : 'Kopiëren' }}</button></form>
         @endcan

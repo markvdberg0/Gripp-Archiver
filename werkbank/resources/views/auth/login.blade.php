@@ -12,5 +12,5 @@
         </form>
     </div>
 </div>
-<p class="muted small" style="text-align:center">Wachtwoord vergeten? Vraag de beheerder om een nieuw tijdelijk wachtwoord.</p>
+<p class="muted small" style="text-align:center"><a href="{{ route('password.request') }}">Wachtwoord vergeten?</a></p>
 @endsection

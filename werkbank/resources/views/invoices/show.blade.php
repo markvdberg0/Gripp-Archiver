@@ -19,7 +19,11 @@
                 <a class="btn" href="{{ route('facturen.edit', $invoice) }}">Wijzigen</a>
                 <form method="post" action="{{ route('facturen.definitief', $invoice) }}" class="inline" data-confirm="Factuur definitief maken? Hij krijgt een nummer en is daarna niet meer te wijzigen.">@csrf<button class="btn btn-primary" type="submit">Definitief maken</button></form>
             @else
-                @if ($invoice->isOverdue())<form method="post" action="{{ route('facturen.herinnering', $invoice) }}" class="inline">@csrf<button class="btn" type="submit">{{ $invoice->reminder_level >= 3 ? 'Nogmaals aanmanen' : 'Herinnering vastleggen' }}</button></form>@endif
+                <a class="btn" href="{{ route('mail.create', ['factuur', $invoice->id]) }}">E-mailen</a>
+                @if ($invoice->isOverdue())
+                    <a class="btn" href="{{ route('mail.create', ['herinnering', $invoice->id]) }}">Herinnering e-mailen</a>
+                    <form method="post" action="{{ route('facturen.herinnering', $invoice) }}" class="inline">@csrf<button class="btn" type="submit" title="Alleen vastleggen, bijvoorbeeld als je per post of telefoon herinnert">{{ $invoice->reminder_level >= 3 ? 'Nogmaals aanmanen' : 'Herinnering vastleggen' }}</button></form>
+                @endif
                 @unless ($invoice->credit_of_id)<form method="post" action="{{ route('facturen.credit', $invoice) }}" class="inline" data-confirm="Een conceptcreditfactuur maken voor deze factuur?">@csrf<button class="btn" type="submit">Crediteren</button></form>@endunless
             @endif
         @endcan

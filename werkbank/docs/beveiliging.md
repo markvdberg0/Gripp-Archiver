@@ -25,7 +25,7 @@ Er moet altijd minstens één actieve beheerder zijn. Een beheerder kan zijn eig
 - Na 5 mislukte pogingen per minuut (per e-mailadres en IP) wordt inloggen tijdelijk geblokkeerd.
 - Een gedeactiveerde gebruiker wordt bij het volgende verzoek uitgelogd.
 - Sessies zijn versleuteld (`SESSION_ENCRYPT=true`) en verlopen na `SESSION_LIFETIME` minuten.
-- Nog niet beschikbaar: tweestapsverificatie en wachtwoordherstel per e-mail (de beheerder maakt een tijdelijk wachtwoord).
+- Wachtwoordherstel per e-mail: de link is 60 minuten geldig en eenmalig; de melding verraadt niet of een adres een account heeft; inactieve accounts krijgen geen mail. Na herstel worden alle sessies van die gebruiker beëindigd. Aanvragen en herstellen staan in het logboek.
 
 ## Logboek
 

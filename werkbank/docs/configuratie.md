@@ -16,7 +16,7 @@ Alle instellingen staan in `.env`. [`.env.example`](../.env.example) bevat elke 
 | `SESSION_LIFETIME` | Minuten tot automatisch uitloggen bij inactiviteit (standaard 480). |
 | `SESSION_SECURE_COOKIE` | `true` zodra Werkbank via https bereikbaar is. |
 | `LOG_CHANNEL`, `LOG_LEVEL`, `LOG_DAILY_DAYS` | Technische logbestanden (in `storage/logs`). Het logboek van gebruikersacties staat los daarvan in de database. |
-| `MAIL_*` | Uitgaande e-mail. Met `MAIL_MAILER=log` gaan mails naar het logbestand. |
+| `MAIL_*` | Uitgaande e-mail voor documenten, herinneringen en wachtwoordherstel. Voor SMTP: `MAIL_MAILER=smtp`, `MAIL_HOST`, `MAIL_PORT` (587 met STARTTLS), `MAIL_USERNAME`, `MAIL_PASSWORD` en `MAIL_FROM_ADDRESS` (een adres van je eigen domein, met SPF/DKIM). Met `MAIL_MAILER=log` gaan mails naar `storage/logs` en wordt niets echt verstuurd. Antwoorden gaan naar de gebruiker die verstuurde (reply-to). |
 | `QUEUE_CONNECTION` | Standaard `database`. Er moet dan een queue-worker draaien. Met `sync` worden taken direct uitgevoerd (alleen voor kleine installaties of testen). |
 | `WERKBANK_IMPORT_PATH` | Map van de Gripp Back-up voor de import (in Docker: `/import`). |
 | `WERKBANK_BACKUP_PATH` | Waar `werkbank:backup` de back-ups van Werkbank neerzet. |

@@ -53,6 +53,17 @@
             </fieldset>
         </div>
     </div>
+    <fieldset><legend>E-mailteksten</legend>
+        <p class="muted small">Plaatshouders: <code>{nummer}</code> <code>{omschrijving}</code> <code>{relatie}</code> <code>{contactpersoon}</code> <code>{bedrag}</code> <code>{openstaand}</code> <code>{vervaldatum}</code> <code>{bedrijf}</code> <code>{afzender}</code>. Leeg laten: de standaardtekst. De afzender van de mail stel je in met <code>MAIL_FROM_ADDRESS</code> in <code>.env</code>.</p>
+        <div class="form-grid">
+            @foreach (['offerte' => 'Offerte', 'factuur' => 'Factuur', 'herinnering' => 'Herinnering', 'opdracht' => 'Opdrachtbevestiging', 'inkoopopdracht' => 'Inkoopopdracht'] as $k => $label)
+                <div>
+                    <x-veld :name="'mail__'.$k.'__onderwerp'" :label="$label.': onderwerp'" :value="$values['mail__'.$k.'__onderwerp']" />
+                    <x-tekst :name="'mail__'.$k.'__tekst'" :label="$label.': tekst'" :value="$values['mail__'.$k.'__tekst']" rows="7" />
+                </div>
+            @endforeach
+        </div>
+    </fieldset>
     <button class="btn btn-primary" type="submit">Opslaan</button>
 </form>
 @endsection

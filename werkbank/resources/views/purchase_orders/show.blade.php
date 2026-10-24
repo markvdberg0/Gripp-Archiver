@@ -11,6 +11,7 @@
     <div class="actions">
         <a class="btn" href="{{ route('inkoopopdrachten.pdf', $order) }}" target="_blank" rel="noopener">PDF</a>
         @can('inkoop.bewerken')
+            <a class="btn" href="{{ route('mail.create', ['inkoopopdracht', $order->id]) }}">E-mailen</a>
             <a class="btn" href="{{ route('inkoopfacturen.create', ['purchase_order_id' => $order->id]) }}">Inkoopfactuur boeken</a>
             <a class="btn btn-primary" href="{{ route('inkoopopdrachten.edit', $order) }}">Wijzigen</a>
         @endcan

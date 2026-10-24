@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Auditable;
+use App\Notifications\WachtwoordHerstellen;
 use App\Support\Rechten;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -33,6 +34,11 @@ class User extends Authenticatable
     public function employee(): HasOne
     {
         return $this->hasOne(Employee::class);
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new WachtwoordHerstellen($token));
     }
 
     public function roleLabel(): string

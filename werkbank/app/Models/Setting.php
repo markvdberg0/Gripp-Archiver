@@ -24,6 +24,17 @@ class Setting extends Model
         'offerte.geldigheid_dagen' => '30', 'offerte.voettekst' => '', 'factuur.betaaltermijn' => '30', 'factuur.voettekst' => '',
         'nummer.offerte' => '', 'nummer.opdracht' => '', 'nummer.factuur' => '', 'nummer.inkoopopdracht' => '', 'nummer.boeknummer' => '',
         'inkoop.vier_ogen_drempel' => '2500',
+        // E-mailteksten. Plaatshouders: {nummer} {omschrijving} {relatie} {contactpersoon} {bedrag} {openstaand} {vervaldatum} {bedrijf} {afzender}
+        'mail.offerte.onderwerp' => 'Offerte {nummer}: {omschrijving}',
+        'mail.offerte.tekst' => "Beste {contactpersoon},\n\nHierbij ontvangt u onze offerte {nummer} voor {omschrijving}. U vindt de offerte als PDF in de bijlage.\n\nHeeft u vragen, neem dan gerust contact met ons op.\n\nMet vriendelijke groet,\n\n{afzender}\n{bedrijf}",
+        'mail.factuur.onderwerp' => 'Factuur {nummer}: {omschrijving}',
+        'mail.factuur.tekst' => "Beste {contactpersoon},\n\nIn de bijlage vindt u factuur {nummer} van {bedrag} (incl. btw). Wij verzoeken u het bedrag vóór {vervaldatum} over te maken onder vermelding van het factuurnummer.\n\nMet vriendelijke groet,\n\n{afzender}\n{bedrijf}",
+        'mail.herinnering.onderwerp' => 'Herinnering factuur {nummer}',
+        'mail.herinnering.tekst' => "Beste {contactpersoon},\n\nVolgens onze administratie staat van factuur {nummer} nog {openstaand} open. De vervaldatum was {vervaldatum}. Wij verzoeken u het bedrag per omgaande over te maken. U vindt de herinnering als PDF in de bijlage.\n\nIs de betaling inmiddels onderweg, dan kunt u dit bericht als niet verzonden beschouwen.\n\nMet vriendelijke groet,\n\n{afzender}\n{bedrijf}",
+        'mail.opdracht.onderwerp' => 'Opdrachtbevestiging {nummer}: {omschrijving}',
+        'mail.opdracht.tekst' => "Beste {contactpersoon},\n\nHartelijk dank voor uw opdracht. In de bijlage vindt u de opdrachtbevestiging {nummer}.\n\nMet vriendelijke groet,\n\n{afzender}\n{bedrijf}",
+        'mail.inkoopopdracht.onderwerp' => 'Inkoopopdracht {nummer}: {omschrijving}',
+        'mail.inkoopopdracht.tekst' => "Beste {contactpersoon},\n\nIn de bijlage vindt u onze inkoopopdracht {nummer}. Wilt u de opdracht en de leverdatum bevestigen en ons inkoopnummer vermelden op pakbon en factuur?\n\nMet vriendelijke groet,\n\n{afzender}\n{bedrijf}",
     ];
 
     public static function get(string $key, ?string $default = null): ?string

@@ -2,17 +2,23 @@
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Beheer;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FileController;
+use App\Http\Controllers\MailController;
 use App\Http\Controllers\SearchController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
     Route::get('/inloggen', [LoginController::class, 'create'])->name('login');
     Route::post('/inloggen', [LoginController::class, 'store'])->middleware('throttle:login');
+    Route::get('/wachtwoord-vergeten', [PasswordResetController::class, 'request'])->name('password.request');
+    Route::post('/wachtwoord-vergeten', [PasswordResetController::class, 'email'])->name('password.email')->middleware('throttle:5,1');
+    Route::get('/wachtwoord-herstellen/{token}', [PasswordResetController::class, 'reset'])->name('password.reset');
+    Route::post('/wachtwoord-herstellen', [PasswordResetController::class, 'update'])->name('password.update')->middleware('throttle:10,1');
 });
 
 Route::middleware(['auth', 'account'])->group(function () {
@@ -35,6 +41,10 @@ Route::middleware(['auth', 'account'])->group(function () {
     // Bestanden (rechten worden per gekoppeld record gecontroleerd)
     Route::get('/bestanden/{bestand}', [FileController::class, 'show'])->name('bestanden.show');
     Route::post('/bestanden', [FileController::class, 'store'])->name('bestanden.store');
+
+    // Documenten per e-mail (recht per soort in de controller)
+    Route::get('/mail/{soort}/{id}', [MailController::class, 'create'])->name('mail.create')->whereIn('soort', ['offerte', 'factuur', 'herinnering', 'opdracht', 'inkoopopdracht'])->whereNumber('id');
+    Route::post('/mail/{soort}/{id}', [MailController::class, 'send'])->name('mail.send')->whereIn('soort', ['offerte', 'factuur', 'herinnering', 'opdracht', 'inkoopopdracht'])->whereNumber('id')->middleware('throttle:30,1');
 
     require __DIR__.'/verkoop.php';
     require __DIR__.'/financieel.php';

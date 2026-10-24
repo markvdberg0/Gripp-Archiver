@@ -185,7 +185,7 @@ Werkbank dekt nu de processen die in de Gripp-data aantoonbaar gebruikt worden: 
 
 | Onderwerp | Status |
 |---|---|
-| E-mail versturen (offertes, facturen, herinneringen) | Ontbreekt; PDF downloaden en status zetten |
+| E-mail versturen (offertes, facturen, herinneringen, opdrachten, inkoopopdrachten) | Beschikbaar, met PDF-bijlage en archief in de timeline; geen ontvangst- of leesbevestiging |
 | Digitaal akkoord door de klant, klantportaal | Ontbreekt |
 | Documentopmaak gelijk aan de Gripp-sjablonen | Eigen, eenvoudige opmaak |
 | Boekhouding (journaal, bank, btw-aangifte, W&V/balans) | Buiten scope; memoriaal en kosten alleen als archief |
@@ -195,7 +195,16 @@ Werkbank dekt nu de processen die in de Gripp-data aantoonbaar gebruikt worden: 
 | Verlof | Niet overgenomen |
 | Voorraad | Alleen de Gripp-velden als vrije velden |
 | Relaties samenvoegen (dubbele relaties) | Ontbreekt |
-| Tweestapsverificatie, wachtwoordherstel per e-mail | Ontbreekt |
+| Wachtwoordherstel per e-mail | Beschikbaar |
+| Tweestapsverificatie | Ontbreekt |
 | Docker-image en CI op MariaDB/PostgreSQL | Geschreven, lokaal niet uitgevoerd (geen Docker beschikbaar); draait in GitHub Actions |
 
 Deze punten zijn de logische volgende stappen; welke daarvan nodig zijn, hangt af van de antwoorden op de open vragen in [analyse-en-plan.md](analyse-en-plan.md).
+
+## Uitbreidingen na de eindstand
+
+### E-mail
+
+- **Werkt:** offertes, verkoopfacturen, betalingsherinneringen, opdrachtbevestigingen en inkoopopdrachten per e-mail versturen met de PDF als bijlage. Ontvanger, onderwerp en tekst zijn vooraf ingevuld (teksten met plaatshouders zoals `{nummer}` en `{openstaand}` instelbaar onder Beheer → Instellingen). Bij versturen: offerte en inkoopopdracht gaan van concept naar verzonden, een herinnering verhoogt het herinneringsniveau. De verzonden PDF en tekst worden als timeline-item bewaard. Mislukt het versturen, dan wordt niets gewijzigd. Wachtwoord vergeten werkt via een herstellink per e-mail.
+- **Getest:** `tests/Feature/MailTest.php` (versturen, adrescontrole, concept/sjabloon geweigerd, herinneringsniveau, rechten, terugdraaien bij een fout, volledige herstelflow met eenmalige token).
+- **Beperkingen:** versturen gebeurt direct (niet via de queue), dus een trage mailserver laat de gebruiker wachten. Geen bounce- of leesbevestiging. Of de mail echt aankomt, hangt af van je mailserver en SPF/DKIM.

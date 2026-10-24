@@ -33,6 +33,16 @@ class SettingsController extends Controller
         'nummer.inkoopopdracht' => ['nullable', 'integer', 'min:1'],
         'nummer.boeknummer' => ['nullable', 'integer', 'min:1'],
         'inkoop.vier_ogen_drempel' => ['required', 'numeric', 'min:0'],
+        'mail.offerte.onderwerp' => ['nullable', 'string', 'max:255'],
+        'mail.offerte.tekst' => ['nullable', 'string', 'max:5000'],
+        'mail.factuur.onderwerp' => ['nullable', 'string', 'max:255'],
+        'mail.factuur.tekst' => ['nullable', 'string', 'max:5000'],
+        'mail.herinnering.onderwerp' => ['nullable', 'string', 'max:255'],
+        'mail.herinnering.tekst' => ['nullable', 'string', 'max:5000'],
+        'mail.opdracht.onderwerp' => ['nullable', 'string', 'max:255'],
+        'mail.opdracht.tekst' => ['nullable', 'string', 'max:5000'],
+        'mail.inkoopopdracht.onderwerp' => ['nullable', 'string', 'max:255'],
+        'mail.inkoopopdracht.tekst' => ['nullable', 'string', 'max:5000'],
     ];
 
     public function edit(): View
