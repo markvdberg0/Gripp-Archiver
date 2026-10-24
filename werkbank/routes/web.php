@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Beheer;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\CompanyMergeController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FileController;
@@ -31,9 +32,14 @@ Route::middleware(['auth', 'account'])->group(function () {
 
     // Relaties en contactpersonen
     Route::middleware('can:relaties.bekijken')->group(function () {
-        Route::resource('relaties', CompanyController::class)->parameters(['relaties' => 'relatie'])
+        Route::resource('relaties', CompanyController::class)->parameters(['relaties' => 'relatie'])->withTrashed(['show'])
             ->middlewareFor(['create', 'store', 'edit', 'update', 'destroy'], 'can:relaties.bewerken');
         Route::post('/relaties/{relatie}/notities', [CompanyController::class, 'storeNote'])->name('relaties.notities.store');
+        Route::middleware('can:relaties.samenvoegen')->group(function () {
+            Route::get('/relaties-dubbel', [CompanyMergeController::class, 'index'])->name('relaties.dubbel');
+            Route::get('/relaties/{relatie}/samenvoegen', [CompanyMergeController::class, 'create'])->name('relaties.samenvoegen');
+            Route::post('/relaties/{relatie}/samenvoegen', [CompanyMergeController::class, 'store'])->name('relaties.samenvoegen.store');
+        });
         Route::resource('contactpersonen', ContactController::class)->parameters(['contactpersonen' => 'contactpersoon']);
         Route::post('/contactpersonen/{contactpersoon}/anonimiseren', [ContactController::class, 'anonymize'])->name('contactpersonen.anonimiseren');
     });

@@ -194,7 +194,7 @@ Werkbank dekt nu de processen die in de Gripp-data aantoonbaar gebruikt worden: 
 | Nacalculatie in euro's (kostprijs per medewerker) | Ontbreekt; alleen uren |
 | Verlof | Niet overgenomen |
 | Voorraad | Alleen de Gripp-velden als vrije velden |
-| Relaties samenvoegen (dubbele relaties) | Ontbreekt |
+| Relaties samenvoegen (dubbele relaties) | Beschikbaar, met opsporing op naam, KvK, btw en IBAN; niet ongedaan te maken (alleen via back-up) |
 | Wachtwoordherstel per e-mail | Beschikbaar |
 | Tweestapsverificatie | Ontbreekt |
 | Docker-image en CI op MariaDB/PostgreSQL | Geschreven, lokaal niet uitgevoerd (geen Docker beschikbaar); draait in GitHub Actions |
@@ -208,3 +208,9 @@ Deze punten zijn de logische volgende stappen; welke daarvan nodig zijn, hangt a
 - **Werkt:** offertes, verkoopfacturen, betalingsherinneringen, opdrachtbevestigingen en inkoopopdrachten per e-mail versturen met de PDF als bijlage. Ontvanger, onderwerp en tekst zijn vooraf ingevuld (teksten met plaatshouders zoals `{nummer}` en `{openstaand}` instelbaar onder Beheer → Instellingen). Bij versturen: offerte en inkoopopdracht gaan van concept naar verzonden, een herinnering verhoogt het herinneringsniveau. De verzonden PDF en tekst worden als timeline-item bewaard. Mislukt het versturen, dan wordt niets gewijzigd. Wachtwoord vergeten werkt via een herstellink per e-mail.
 - **Getest:** `tests/Feature/MailTest.php` (versturen, adrescontrole, concept/sjabloon geweigerd, herinneringsniveau, rechten, terugdraaien bij een fout, volledige herstelflow met eenmalige token).
 - **Beperkingen:** versturen gebeurt direct (niet via de queue), dus een trage mailserver laat de gebruiker wachten. Geen bounce- of leesbevestiging. Of de mail echt aankomt, hangt af van je mailserver en SPF/DKIM.
+
+### Relaties samenvoegen
+
+- **Werkt:** Relaties › Dubbele relaties toont kandidaten met een gelijke genormaliseerde naam ("Staal & Co B.V." = "staal co bv"), KvK-nummer, btw-nummer of IBAN. Bij samenvoegen gaan contactpersonen, timeline, offertes, opdrachten, taken, contracten, verkoop- en inkoopdocumenten, producten, bestanden en labels naar de relatie die blijft; lege velden worden desgewenst aangevuld en rollen samengevoegd. De opgeheven relatie wordt zacht verwijderd, oude links verwijzen door, en de import volgt de samenvoeging. Recht: `relaties.samenvoegen` (beheerder en administratie).
+- **Getest:** `tests/Feature/CompanyMergeTest.php` (verplaatsen inclusief dubbele labels en bestanden, aanvullen, doorverwijzen, rechten en bevestiging, opsporing, import na samenvoegen). Op de echte data: 13 kandidaatgroepen, opsporing in ongeveer 5 ms.
+- **Beperkingen:** niet ongedaan te maken behalve via een back-up. Contactpersonen worden niet ontdubbeld. De blijvende relatie geldt na aanvullen als lokaal gewijzigd, dus latere Gripp-wijzigingen aan die relatie worden als conflict gemeld.

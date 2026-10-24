@@ -52,8 +52,15 @@ class CompanyController extends Controller
         return redirect()->route('relaties.show', $company)->with('status', 'Relatie aangemaakt.');
     }
 
-    public function show(Request $request, Company $relatie): View
+    public function show(Request $request, Company $relatie): View|RedirectResponse
     {
+        // Verwijderde relaties alleen om door te verwijzen naar de relatie waarin ze zijn opgegaan.
+        if ($relatie->trashed()) {
+            $target = $relatie->merged_into_id ? Company::find($relatie->merged_into_id) : null;
+            abort_unless($target, 404);
+
+            return redirect()->route('relaties.show', $target)->with('status', "Relatie {$relatie->number} {$relatie->name} is samengevoegd met deze relatie.");
+        }
         $relatie->load(['accountManager', 'tags', 'files', 'contacts']);
         $timeline = $relatie->timeline()->visibleTo($request->user())->with(['employee', 'user', 'files'])->paginate(25, ['*'], 'tl')->withQueryString();
 

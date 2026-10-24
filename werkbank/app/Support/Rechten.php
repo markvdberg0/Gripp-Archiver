@@ -21,6 +21,7 @@ final class Rechten
         'relaties.bekijken' => 'Relaties en contactpersonen bekijken',
         'relaties.bewerken' => 'Relaties en contactpersonen aanmaken en wijzigen',
         'relaties.financieel' => 'Bankgegevens van relaties zien en wijzigen',
+        'relaties.samenvoegen' => 'Dubbele relaties samenvoegen',
         'producten.bekijken' => 'Producten bekijken',
         'producten.bewerken' => 'Producten en pakketten beheren',
         'offertes.bekijken' => 'Offertes bekijken',

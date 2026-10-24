@@ -18,6 +18,7 @@
             <a class="btn" href="{{ route('contactpersonen.create', ['company_id' => $company->id]) }}">Contactpersoon toevoegen</a>
             <a class="btn btn-primary" href="{{ route('relaties.edit', $company) }}">Wijzigen</a>
         @endcan
+        @can('relaties.samenvoegen')<a class="btn" href="{{ route('relaties.samenvoegen', $company) }}">Samenvoegen…</a>@endcan
     </div>
 </div>
 

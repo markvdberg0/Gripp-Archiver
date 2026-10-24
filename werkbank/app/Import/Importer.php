@@ -163,6 +163,12 @@ final class Importer
 
                 continue;
             }
+            if ($model && $model->getAttribute('merged_into_id')) {
+                // Opgegaan in een andere relatie: bewust niet bijwerken of herstellen.
+                $ctx->count($entity, 'skipped');
+
+                continue;
+            }
             if (($model && $softDeletes && $model->trashed()) || (! $model && isset($tombstones[$gid]))) {
                 $ctx->count($entity, 'conflicts');
                 $ctx->issue($entity, $gid, 'conflict', 'In Werkbank verwijderd; niet hersteld.');

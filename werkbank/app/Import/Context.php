@@ -2,6 +2,7 @@
 
 namespace App\Import;
 
+use App\Models\Company;
 use App\Models\StoredFile;
 use App\Models\VatRate;
 use Illuminate\Database\Eloquent\Model;
@@ -30,9 +31,26 @@ final class Context
         if ($gid === null) {
             return null;
         }
-        $this->maps[$modelClass] ??= $modelClass::query()->withoutGlobalScopes()->whereNotNull('gripp_id')->pluck('id', 'gripp_id')->all();
+        $this->maps[$modelClass] ??= $this->loadMap($modelClass);
 
         return $this->maps[$modelClass][$gid] ?? null;
+    }
+
+    /** gripp_id → lokaal id; samengevoegde relaties verwijzen naar de relatie waarin ze zijn opgegaan. */
+    private function loadMap(string $modelClass): array
+    {
+        $map = $modelClass::query()->withoutGlobalScopes()->whereNotNull('gripp_id')->pluck('id', 'gripp_id')->all();
+        if ($modelClass === Company::class) {
+            $merged = Company::query()->withoutGlobalScopes()->whereNotNull('merged_into_id')->pluck('merged_into_id', 'id')->all();
+            foreach ($map as $gid => $id) {
+                for ($hops = 0; isset($merged[$id]) && $hops < 10; $hops++) {
+                    $id = $merged[$id];
+                }
+                $map[$gid] = $id;
+            }
+        }
+
+        return $map;
     }
 
     /** @return list<int> */
