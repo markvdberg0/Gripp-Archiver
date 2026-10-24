@@ -6,6 +6,8 @@ use App\Models\AuditLog;
 use App\Models\Setting;
 use App\Models\User;
 use App\Support\Totp;
+use Illuminate\Encryption\Encrypter;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class TwoFactorTest extends TestCase
@@ -122,6 +124,22 @@ class TwoFactorTest extends TestCase
         $this->actingAs($user->fresh());
         $this->get('/')->assertRedirect(route('account.tweestaps'));
         $this->get('/account/tweestaps')->assertOk();
+    }
+
+    public function test_andere_app_key_herstelcode_en_noodcommando(): void
+    {
+        [$user, $secret, $codes] = $this->enabledUser();
+        // Geheim versleuteld met een andere sleutel, zoals na herstel op een nieuwe server.
+        $other = new Encrypter(random_bytes(32), 'aes-256-cbc');
+        DB::table('users')->where('id', $user->id)->update(['two_factor_secret' => $other->encryptString($secret)]);
+
+        $this->post('/inloggen', ['email' => 'a@example.test', 'password' => 'geheim-wachtwoord-1'])->assertRedirect(route('login.tweestaps'));
+        $this->post('/inloggen/tweestaps', ['code' => Totp::code($secret, Totp::step())])->assertSessionHasErrors('code'); // geen 500
+        $this->post('/inloggen/tweestaps', ['code' => $codes[1]])->assertRedirect(route('dashboard'));
+        $this->post('/uitloggen');
+
+        $this->artisan('werkbank:tweestaps-uit', ['email' => 'a@example.test'])->assertSuccessful();
+        $this->assertFalse($user->fresh()->hasTwoFactor());
     }
 
     public function test_alleen_beheerder_wijzigt_verplichting(): void

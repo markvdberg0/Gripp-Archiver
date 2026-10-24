@@ -12,7 +12,7 @@ Eén zip-bestand `werkbank-backup-<datum>-<tijd>.zip` met:
 | `database/<tabel>.jsonl` | Alle rijen van elke tabel, één JSON-object per regel |
 | `bestanden/…` | Alle opgeslagen bestanden (bijlagen, PDF's) |
 
-Niet in de back-up: sessies, cache, wachtrij en wachtwoordreset-tokens. De `APP_KEY` staat **niet** in de back-up; bewaar die apart (bijvoorbeeld in een wachtwoordkluis).
+Niet in de back-up: sessies, cache, wachtrij en wachtwoordreset-tokens. De `APP_KEY` staat **niet** in de back-up; bewaar die apart (bijvoorbeeld in een wachtwoordkluis). Zonder dezelfde sleutel werken de tweestapscodes uit de app niet meer (herstelcodes wel); zie [beveiliging.md](beveiliging.md).
 
 De gegevens staan als JSON in de back-up, zodat een back-up ook op een ander databasetype kan worden teruggezet (bijvoorbeeld van SQLite naar MariaDB of PostgreSQL). Booleans worden daarbij omgezet en tabellen worden in de volgorde van hun verwijzingen gevuld. Getest is herstel binnen hetzelfde databasetype (SQLite lokaal, MariaDB en PostgreSQL in CI); de overstap tussen typen is ontworpen maar niet als geheel getest. Maak bij zo'n overstap eerst een proefherstel.
 

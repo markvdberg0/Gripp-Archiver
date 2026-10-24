@@ -7,6 +7,7 @@ use App\Notifications\WachtwoordHerstellen;
 use App\Support\Rechten;
 use App\Support\Totp;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -32,14 +33,15 @@ class User extends Authenticatable
             'active' => 'boolean',
             'must_change_password' => 'boolean',
             'two_factor_secret' => 'encrypted',
-            'two_factor_recovery_codes' => 'encrypted:array',
+            'two_factor_recovery_codes' => 'array', // bcrypt-hashes, net als het wachtwoord
             'two_factor_confirmed_at' => 'datetime',
         ];
     }
 
     public function hasTwoFactor(): bool
     {
-        return $this->two_factor_confirmed_at !== null && $this->two_factor_secret !== null;
+        // Ruwe waarde: niet ontsleutelen (dat faalt na herstel met een andere APP_KEY).
+        return $this->two_factor_confirmed_at !== null && $this->getAttributes()['two_factor_secret'] !== null;
     }
 
     /** Code uit de app of een herstelcode controleren; een herstelcode is daarna verbruikt. */
@@ -48,7 +50,15 @@ class User extends Authenticatable
         if (! $this->hasTwoFactor()) {
             return null;
         }
-        if ($step = Totp::verify($this->two_factor_secret, $input, $this->two_factor_last_step)) {
+        try {
+            $secret = $this->two_factor_secret;
+        } catch (DecryptException $e) {
+            // Andere APP_KEY (herstel op een nieuwe server): herstelcodes werken nog wel (hashes, niet versleuteld);
+            // anders zet `werkbank:tweestaps-uit` het voor deze gebruiker uit.
+            report($e);
+            $secret = null;
+        }
+        if ($secret && $step = Totp::verify($secret, $input, $this->two_factor_last_step)) {
             $this->forceFill(['two_factor_last_step' => $step])->saveQuietly();
 
             return 'app';
