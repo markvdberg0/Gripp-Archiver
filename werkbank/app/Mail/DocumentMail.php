@@ -22,6 +22,8 @@ class DocumentMail extends Mailable
         public ?string $pdfName = null,
         public ?string $replyToAddress = null,
         public ?string $replyToName = null,
+        /** @var array<string, array{0: string, 1: string}> extra bijlagen: naam => [inhoud, mime-type] (bv. UBL) */
+        public array $extra = [],
     ) {}
 
     public function envelope(): Envelope
@@ -39,6 +41,11 @@ class DocumentMail extends Mailable
 
     public function attachments(): array
     {
-        return $this->pdfBytes ? [Attachment::fromData(fn () => $this->pdfBytes, $this->pdfName)->withMime('application/pdf')] : [];
+        $out = $this->pdfBytes ? [Attachment::fromData(fn () => $this->pdfBytes, $this->pdfName)->withMime('application/pdf')] : [];
+        foreach ($this->extra as $name => [$bytes, $mime]) {
+            $out[] = Attachment::fromData(fn () => $bytes, $name)->withMime($mime);
+        }
+
+        return $out;
     }
 }

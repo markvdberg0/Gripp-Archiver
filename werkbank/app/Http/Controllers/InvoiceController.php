@@ -16,6 +16,7 @@ use App\Support\Audit;
 use App\Support\Bedragen;
 use App\Support\Csv;
 use App\Support\Regels;
+use App\Support\Ubl;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -95,7 +96,10 @@ class InvoiceController extends Controller
     {
         $factuur->load(['company', 'contact', 'project', 'contract', 'creditOf', 'credits', 'payments.user', 'files', 'lines.unit', 'lines.vatRate', 'lines.ledger', 'lines.project']);
 
-        return view('invoices.show', ['invoice' => $factuur, 'vat' => $factuur->vatBreakdown(), 'timeline' => $factuur->timeline()->with(['employee', 'user', 'files'])->paginate(25)]);
+        return view('invoices.show', [
+            'invoice' => $factuur, 'vat' => $factuur->vatBreakdown(), 'timeline' => $factuur->timeline()->with(['employee', 'user', 'files'])->paginate(25),
+            'ublWarnings' => $factuur->isEditable() ? [] : Ubl::invoice($factuur)['warnings'],
+        ]);
     }
 
     public function edit(Invoice $factuur): View|RedirectResponse
@@ -216,6 +220,19 @@ class InvoiceController extends Controller
         });
 
         return redirect()->route('facturen.edit', $credit)->with('status', 'Conceptcreditfactuur gemaakt. Controleer de regels en maak hem definitief.');
+    }
+
+    /** E-factuur (UBL, Peppol BIS 3.0-structuur) van een definitieve factuur. */
+    public function ubl(Invoice $factuur): Response
+    {
+        abort_if($factuur->isEditable(), 422, 'Maak de factuur eerst definitief.');
+        $ubl = Ubl::invoice($factuur);
+        Audit::log('ubl', $factuur, $factuur->auditLabel());
+
+        return response($ubl['xml'], 200, [
+            'Content-Type' => 'application/xml; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="'.$ubl['filename'].'"',
+        ]);
     }
 
     public function pdf(Invoice $factuur): Response

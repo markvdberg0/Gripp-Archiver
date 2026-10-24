@@ -12,6 +12,7 @@ use App\Models\StoredFile;
 use App\Support\Audit;
 use App\Support\Documenten;
 use App\Support\Format;
+use App\Support\Ubl;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -60,6 +61,7 @@ class MailController extends Controller
             'subject' => ['required', 'string', 'max:255'],
             'body' => ['required', 'string', 'max:20000'],
             'bcc_self' => ['boolean'],
+            'ubl' => ['boolean'],
         ], [], ['to' => 'aan', 'subject' => 'onderwerp', 'body' => 'tekst']);
         $to = $this->addresses($data['to'], 'to');
         $cc = $this->addresses($data['cc'] ?? '', 'cc');
@@ -84,7 +86,12 @@ class MailController extends Controller
                 if (! empty($data['bcc_self']) && $user->email) {
                     $mail->bcc($user->email);
                 }
-                $mail->send(new DocumentMail($data['subject'], $data['body'], $pdf['bytes'], $pdf['filename'], $user->email, $user->name));
+                $extra = [];
+                if (! empty($data['ubl']) && $doc instanceof Invoice) {
+                    $ubl = Ubl::invoice($doc);
+                    $extra[$ubl['filename']] = [$ubl['xml'], 'application/xml'];
+                }
+                $mail->send(new DocumentMail($data['subject'], $data['body'], $pdf['bytes'], $pdf['filename'], $user->email, $user->name, $extra));
 
                 $this->archive($doc, $soort, $data, $to, $cc, $pdf, $user);
             });

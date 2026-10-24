@@ -1,8 +1,14 @@
 <?php
 
+use App\Http\Controllers\PaymentFileController;
 use App\Http\Controllers\PurchaseInvoiceController;
 use App\Http\Controllers\PurchaseOrderController;
 use Illuminate\Support\Facades\Route;
+
+Route::middleware('can:inkoop.goedkeuren')->group(function () {
+    Route::get('/inkoopfacturen-betalen', [PaymentFileController::class, 'index'])->name('inkoopfacturen.betalen');
+    Route::post('/inkoopfacturen-betalen', [PaymentFileController::class, 'store'])->name('inkoopfacturen.betalen.store');
+});
 
 Route::middleware('can:inkoop.bekijken')->group(function () {
     Route::resource('inkoopopdrachten', PurchaseOrderController::class)->parameters(['inkoopopdrachten' => 'inkoopopdracht'])

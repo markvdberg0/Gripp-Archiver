@@ -17,6 +17,9 @@
         <x-veld name="subject" label="Onderwerp" :value="$subject" required />
         <x-tekst name="body" label="Tekst" :value="$body" required rows="12" />
         <x-vink name="bcc_self" label="Stuur mij een kopie ({{ auth()->user()->email }})" :checked="true" />
+        @if (in_array($soort, ['factuur', 'herinnering'], true))
+            <x-vink name="ubl" label="UBL-bestand (e-factuur) meesturen" :checked="false" hint="Voor ontvangers die facturen automatisch inlezen in hun boekhouding." />
+        @endif
         <p class="muted small">Antwoorden komen bij jou binnen (reply-to). De verzonden tekst en PDF worden in de timeline bewaard.</p>
         <div class="actions"><button class="btn btn-primary" type="submit">Versturen</button><a class="btn" href="{{ $back }}">Annuleren</a></div>
     </div>

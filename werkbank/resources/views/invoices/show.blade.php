@@ -14,6 +14,7 @@
     </div>
     <div class="actions">
         <a class="btn" href="{{ route('facturen.pdf', $invoice) }}" target="_blank" rel="noopener">{{ $invoice->reminder_level ? \App\Models\Invoice::REMINDERS[$invoice->reminder_level].' (PDF)' : 'PDF' }}</a>
+        @unless ($invoice->isEditable())<a class="btn" href="{{ route('facturen.ubl', $invoice) }}" title="E-factuur voor de boekhouding van de klant (Peppol BIS 3.0-structuur)">UBL</a>@endunless
         @can('facturen.bewerken')
             @if ($invoice->isEditable())
                 <a class="btn" href="{{ route('facturen.edit', $invoice) }}">Wijzigen</a>
@@ -29,6 +30,10 @@
         @endcan
     </div>
 </div>
+
+@if ($ublWarnings)
+    <p class="small muted">E-factuur (UBL): {{ implode(' ', $ublWarnings) }}</p>
+@endif
 
 <div class="tiles">
     <div class="tile"><div class="k">Totaal incl. btw</div><div class="v">{{ Format::euro($invoice->total_incl) }}</div></div>

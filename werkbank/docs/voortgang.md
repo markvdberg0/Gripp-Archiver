@@ -189,7 +189,7 @@ Werkbank dekt nu de processen die in de Gripp-data aantoonbaar gebruikt worden: 
 | Digitaal akkoord door de klant, klantportaal | Ontbreekt |
 | Documentopmaak gelijk aan de Gripp-sjablonen | Eigen, eenvoudige opmaak |
 | Boekhouding (journaal, bank, btw-aangifte, W&V/balans) | Buiten scope; memoriaal en kosten alleen als archief |
-| UBL/e-factuur, SEPA-bestanden, bankkoppeling | Ontbreekt |
+| UBL/e-factuur, SEPA-bestanden, bankkoppeling | UBL-export (Peppol BIS 3.0-structuur, niet officieel gevalideerd) en SEPA-betaalbestand voor inkoopfacturen beschikbaar; geen Peppol-verzending, geen bankkoppeling of incassobestand |
 | Agenda-koppeling, sleep-en-zet-planning | Ontbreekt; weekoverzicht met invoer |
 | Nacalculatie in euro's (kostprijs per medewerker) | Ontbreekt; alleen uren |
 | Verlof | Beschikbaar: aanvragen, goedkeuren, saldo en planning; geen ziekteverzuim, feestdagen of meenemen van restsaldo |
@@ -227,3 +227,9 @@ Deze punten zijn de logische volgende stappen; welke daarvan nodig zijn, hangt a
 - **Getest:** `tests/Feature/LeaveTest.php` (weekend en overlap, saldo, goedkeuren en afwijzen, vier ogen, zichtbaarheid per rol, planning, import inclusief statusovergang en ziekmelding).
 - **Opgelost bij het bouwen:** op SQLite vielen uren en agenda-items op zondag buiten de weekweergave, en "week indienen" sloeg zondaguren over. Regressietest: `ProjectTest::test_zondag_hoort_bij_de_week`.
 - **Beperkingen:** geen ziekteverzuim (bewust: gezondheidsgegevens), geen feestdagenkalender, geen meenemen van restsaldo naar het volgende jaar, geen halve dagen met begin- en eindtijd. De veldnamen van verlofdagen in Gripp zijn aangenomen (zie [import.md](import.md)).
+
+### E-factuur (UBL) en SEPA-betaalbestand
+
+- **Werkt:** bij een definitieve verkoopfactuur de knop **UBL**: een UBL 2.1-bestand volgens de structuur van Peppol BIS Billing 3.0, met btw per categorie (standaard, nul, vrijgesteld, verlegd, binnen en buiten de EU), korting per regel, eenheden volgens UN/ECE, betaalinstructie met IBAN en, bij een creditfactuur, een CreditNote met verwijzing naar de oorspronkelijke factuur. Ontbrekende gegevens (KvK, btw-nummer, IBAN) worden op de factuur gemeld. Het UBL-bestand kan als extra bijlage met de factuurmail mee. Onder Inkoopfacturen › **Betaalbestand** maak je een SEPA-bestand (pain.001.001.09) van goedgekeurde, openstaande inkoopfacturen. IBAN's worden gecontroleerd (lengte en mod-97), namen omgezet naar de SEPA-tekenset, en facturen die al in een bestand zaten worden onthouden (tegen dubbel betalen).
+- **Getest:** `tests/Feature/EInvoiceTest.php` (totalen en regels kloppen onderling, verlegde btw, creditnota, mailbijlage, IBAN-controle, betaalbestand met weigeringen en rechten). Op de echte data: voor alle 70 definitieve facturen sluiten regelbedragen, btw en totalen in het UBL-bestand op elkaar en op de opgeslagen totalen aan.
+- **Beperkingen:** niet getoetst met de officiële Peppol-validator of een XSD, en niet bij een bank ingelezen: controleer het eerste bestand bij je boekhoudpakket of bank. Geen verzending via het Peppol-netwerk (daarvoor is een toegangspunt nodig). Het betaalbestand registreert geen betaling; dat gebeurt pas na uitvoering. Geen incassobestand (pain.008).

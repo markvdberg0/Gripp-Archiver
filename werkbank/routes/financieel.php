@@ -11,6 +11,7 @@ Route::middleware('can:facturen.bekijken')->group(function () {
     Route::resource('facturen', InvoiceController::class)->parameters(['facturen' => 'factuur'])
         ->middlewareFor(['create', 'store', 'edit', 'update', 'destroy'], 'can:facturen.bewerken');
     Route::get('/facturen/{factuur}/pdf', [InvoiceController::class, 'pdf'])->name('facturen.pdf');
+    Route::get('/facturen/{factuur}/ubl', [InvoiceController::class, 'ubl'])->name('facturen.ubl');
     Route::middleware('can:facturen.bewerken')->group(function () {
         Route::post('/facturen/{factuur}/definitief', [InvoiceController::class, 'finalize'])->name('facturen.definitief');
         Route::post('/facturen/{factuur}/herinnering', [InvoiceController::class, 'remind'])->name('facturen.herinnering');

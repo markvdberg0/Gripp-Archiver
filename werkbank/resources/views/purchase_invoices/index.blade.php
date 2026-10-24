@@ -4,7 +4,10 @@
 @section('content')
 <div class="page-head">
     <div><h1>Inkoopfacturen</h1><div class="sub">{{ $sum->n }} facturen · {{ Format::euro($sum->incl) }} incl. btw · openstaand {{ Format::euro($sum->open) }}</div></div>
-    <div class="actions">@can('inkoop.bewerken')<a class="btn btn-primary" href="{{ route('inkoopfacturen.create') }}">Inkoopfactuur boeken</a>@endcan</div>
+    <div class="actions">
+        @can('inkoop.goedkeuren')<a class="btn" href="{{ route('inkoopfacturen.betalen') }}">Betaalbestand</a>@endcan
+        @can('inkoop.bewerken')<a class="btn btn-primary" href="{{ route('inkoopfacturen.create') }}">Inkoopfactuur boeken</a>@endcan
+    </div>
 </div>
 <div class="actions" style="margin-bottom:12px">
     <a class="btn btn-sm {{ ! request('fase') ? 'btn-primary' : '' }}" href="{{ route('inkoopfacturen.index') }}">Alle</a>
