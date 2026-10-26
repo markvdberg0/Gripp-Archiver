@@ -9,6 +9,8 @@ Maak een volledige, **alleen-lezende** back-up van je Gripp-account, met een arc
 - Niets te installeren: de startscripts halen zo nodig zelf een portable Node.js op.
 - Ondersteunt meerdere Gripp-accounts naast elkaar (profielen), en een automatische dagelijkse back-up.
 
+> **Nieuw: Werkbank.** In de map [`werkbank/`](werkbank/README.md) staat een opensource, zelf te hosten bedrijfsapplicatie (Laravel) voor relaties, offertes, opdrachten, uren, facturatie en inkoop. Werkbank kan een back-up van deze tool controleerbaar importeren. De back-uptool zelf blijft ongewijzigd werken.
+
 ## Downloaden
 
 Download de nieuwste versie bij **[Releases](../../releases/latest)** (`gripp-backup-<versie>.zip`) en pak hem uit. Heb je git, dan kan ook `git clone`; bijwerken gaat dan met `git pull`. Wat er per versie veranderd is, staat in [CHANGELOG.md](CHANGELOG.md).

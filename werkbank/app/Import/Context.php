@@ -1,0 +1,190 @@
+<?php
+
+namespace App\Import;
+
+use App\Models\Company;
+use App\Models\StoredFile;
+use App\Models\VatRate;
+use Illuminate\Database\Eloquent\Model;
+use Symfony\Component\Mime\MimeTypes;
+
+/** Gedeelde toestand tijdens één importrun: id-koppelingen, tellers en meldingen. */
+final class Context
+{
+    public const MAX_ISSUES_PER_ENTITY = 200;
+
+    /** @var array<class-string, array<int, int>> gripp_id → lokaal id */
+    private array $maps = [];
+
+    public array $stats = [];
+
+    public array $issues = [];
+
+    public array $files = ['copied' => 0, 'reused' => 0, 'missing' => 0];
+
+    public function __construct(public readonly Snapshot $snapshot, public readonly bool $dryRun) {}
+
+    /** Lokaal id bij een Gripp-verwijzing, of null als het doel (nog) niet bestaat. */
+    public function id(string $modelClass, mixed $ref): ?int
+    {
+        $gid = Gripp::id($ref);
+        if ($gid === null) {
+            return null;
+        }
+        $this->maps[$modelClass] ??= $this->loadMap($modelClass);
+
+        return $this->maps[$modelClass][$gid] ?? null;
+    }
+
+    /** gripp_id → lokaal id; samengevoegde relaties verwijzen naar de relatie waarin ze zijn opgegaan. */
+    private function loadMap(string $modelClass): array
+    {
+        $map = $modelClass::query()->withoutGlobalScopes()->whereNotNull('gripp_id')->pluck('id', 'gripp_id')->all();
+        if ($modelClass === Company::class) {
+            $merged = Company::query()->withoutGlobalScopes()->whereNotNull('merged_into_id')->pluck('merged_into_id', 'id')->all();
+            foreach ($map as $gid => $id) {
+                for ($hops = 0; isset($merged[$id]) && $hops < 10; $hops++) {
+                    $id = $merged[$id];
+                }
+                $map[$gid] = $id;
+            }
+        }
+
+        return $map;
+    }
+
+    /** @return list<int> */
+    public function ids(string $modelClass, mixed $refs): array
+    {
+        return array_values(array_filter(array_map(fn ($r) => $this->id($modelClass, $r), Gripp::ids($refs) ?: [])));
+    }
+
+    /**
+     * Btw-tarief bij een Gripp-verwijzing ({ id, searchname: 'BTW 21%' }). Gripp levert geen tabel met
+     * tarieven; ze worden aangemaakt uit de verwijzingen, met het percentage uit de naam ("nul" = 0%).
+     */
+    public function vatRate(mixed $ref, string $kind): ?int
+    {
+        $gid = Gripp::id($ref);
+        if ($gid === null) {
+            return null;
+        }
+        if ($id = $this->id(VatRate::class, $gid)) {
+            return $id;
+        }
+        $name = Gripp::label($ref) ?? "Btw {$gid}";
+        $pct = preg_match('/(\d+(?:[.,]\d+)?)\s*%/', $name, $m) ? (float) str_replace(',', '.', $m[1]) : 0.0;
+        // "BTW binnen EU 21%" / "buiten EU" / "verlegd": btw wordt berekend maar niet betaald (verlegd).
+        $reverse = $pct > 0 && (bool) preg_match('/binnen\s*EU|buiten\s*EU|verlegd|import/i', $name);
+        $rate = VatRate::create(['gripp_id' => $gid, 'name' => mb_substr($name, 0, 100), 'percentage' => $pct, 'kind' => $kind, 'reverse_charge' => $reverse, 'active' => true, 'gripp_synced_at' => now()]);
+        $this->put(VatRate::class, $gid, $rate->id);
+
+        return $rate->id;
+    }
+
+    public function remember(Model $model): void
+    {
+        if (isset($this->maps[$model::class])) {
+            $this->put($model::class, (int) $model->gripp_id, $model->getKey());
+        }
+    }
+
+    /** @var list<array{0: class-string, 1: int}>|null koppelingen die in de lopende rij nieuw zijn toegevoegd */
+    private ?array $rowJournal = null;
+
+    /** Een importrij begint (eigen savepoint). */
+    public function beginRow(): void
+    {
+        $this->rowJournal = [];
+    }
+
+    public function commitRow(): void
+    {
+        $this->rowJournal = null;
+    }
+
+    /** De rij is teruggedraaid: haal de koppelingen weg die in deze rij zijn toegevoegd. */
+    public function rollbackRow(): void
+    {
+        foreach ($this->rowJournal ?? [] as [$class, $gid]) {
+            unset($this->maps[$class][$gid]);
+        }
+        $this->rowJournal = null;
+    }
+
+    private function put(string $class, int $gid, int $id): void
+    {
+        if ($this->rowJournal !== null && ! isset($this->maps[$class][$gid])) {
+            $this->rowJournal[] = [$class, $gid];
+        }
+        $this->maps[$class][$gid] = $id;
+    }
+
+    public function count(string $entity, string $what, int $n = 1): void
+    {
+        $this->stats[$entity][$what] = ($this->stats[$entity][$what] ?? 0) + $n;
+    }
+
+    public function issue(string $entity, mixed $grippId, string $type, string $message): void
+    {
+        $this->count($entity, 'issues');
+        if (count($this->issues[$entity] ?? []) < self::MAX_ISSUES_PER_ENTITY) {
+            $this->issues[$entity][] = ['gripp_id' => $grippId, 'type' => $type, 'message' => mb_substr($message, 0, 500)];
+        }
+    }
+
+    /**
+     * Bestandsrecord voor een Gripp file-id, met inhoud uit het archief (ontdubbeld op SHA-256).
+     * Bij een droogloop wordt niets gekopieerd en geen record aangemaakt.
+     */
+    public function storedFile(int $grippFileId, ?string $title = null): ?StoredFile
+    {
+        $existing = StoredFile::where('gripp_id', $grippFileId)->first();
+        $info = $this->snapshot->file($grippFileId);
+        if ($existing && ($existing->path !== null || ! $info)) {
+            return $existing;
+        }
+
+        return $this->storeFrom($info, $existing ?? new StoredFile(['gripp_id' => $grippFileId]), $title);
+    }
+
+    /** Bestand uit het archief vastleggen (zonder Gripp file-id, bv. een factuur-PDF). */
+    public function storeArchived(?array $info, string $name): ?StoredFile
+    {
+        if (! $info) {
+            return null;
+        }
+        if ($info['sha256'] && $found = StoredFile::where('sha256', $info['sha256'])->whereNull('gripp_id')->where('name', $name)->first()) {
+            $this->files['reused']++;
+
+            return $found;
+        }
+
+        return $this->storeFrom($info, new StoredFile, $name);
+    }
+
+    private function storeFrom(?array $info, StoredFile $file, ?string $name): ?StoredFile
+    {
+        if (! $info) {
+            $this->files['missing']++;
+        }
+        if ($this->dryRun) {
+            if ($info) {
+                $this->files['copied']++;
+            }
+
+            return $file->exists ? $file : null;
+        }
+        $file->name = mb_substr($name ?: ($info['name'] ?? 'bestand-'.$file->gripp_id), 0, 255);
+        if ($info) {
+            $stored = StoredFile::storeContent($info['path']);
+            $file->fill($stored);
+            $file->mime_type = MimeTypes::getDefault()->guessMimeType($info['path']) ?? 'application/octet-stream';
+            $this->files['copied']++;
+        }
+        $file->gripp_synced_at = now();
+        $file->save();
+
+        return $file;
+    }
+}

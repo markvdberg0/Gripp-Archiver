@@ -1,5 +1,18 @@
 # Wijzigingen
 
+## Werkbank 0.1.0 (map `werkbank/`)
+
+Eerste versie van Werkbank, een zelf te hosten Laravel-applicatie die de back-ups van deze tool kan importeren. De back-uptool is niet gewijzigd.
+
+- Relaties, contactpersonen, timeline en bestanden; rollen, rechten en logboek.
+- Producten, pakketten, offertes (met sjablonen en PDF) en opdrachten.
+- Taken, weekplanning en urenregistratie met fiatteren.
+- Verkoopfacturen, creditfacturen, betalingen, herinneringen en contracten.
+- Inkoopopdrachten en inkoopfacturen met controle, goedkeuring en btw verlegd.
+- Overzichten met CSV-export, back-up en herstel, AVG-anonimiseren.
+- Controleerbare, herhaalbare import uit de Gripp Back-up met controletotalen.
+- Docker-image en Docker Compose. Zie [werkbank/docs/voortgang.md](werkbank/docs/voortgang.md) voor wat wel en niet gelijkwaardig is.
+
 ## 0.5.0 — eerste openbare versie
 
 - **Geen installatie nodig:** startscripts voor Windows, macOS en Linux halen zo nodig een portable Node.js op, gecontroleerd met een vastgelegd controlegetal.

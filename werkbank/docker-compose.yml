@@ -1,0 +1,68 @@
+# Werkbank met Docker Compose. Zie docs/installatie.md.
+#   cp .env.example .env    en vul APP_KEY en APP_URL in
+#   docker compose up -d
+#   docker compose exec web php artisan werkbank:gebruiker jij@example.test
+#
+# Standaard draait Werkbank op SQLite (bestand in het volume 'database'). Wil je MariaDB, zet dan in .env
+# DB_CONNECTION=mariadb (en DB_HOST=db, DB_DATABASE, DB_USERNAME, DB_PASSWORD) en start met:
+#   docker compose --profile mariadb up -d
+
+x-werkbank: &werkbank
+  image: werkbank:latest
+  build: .
+  env_file: .env
+  environment:
+    APP_ENV: production
+    LOG_CHANNEL: stderr
+    DB_DATABASE: ${DB_DATABASE:-/var/www/html/database/data/werkbank.sqlite}
+    WERKBANK_IMPORT_PATH: /import
+    WERKBANK_BACKUP_PATH: /backups
+  volumes:
+    - database:/var/www/html/database/data
+    - storage:/var/www/html/storage/app
+    - ${WERKBANK_BACKUP_DIR:-./backups}:/backups
+    # Back-upmap van de Gripp Back-up, alleen-lezen. Pas het pad aan of laat deze regel weg.
+    - ${GRIPP_BACKUP_DIR:-./gripp-backup}:/import:ro
+  restart: unless-stopped
+
+services:
+  web:
+    <<: *werkbank
+    environment:
+      APP_ENV: production
+      LOG_CHANNEL: stderr
+      DB_DATABASE: ${DB_DATABASE:-/var/www/html/database/data/werkbank.sqlite}
+      WERKBANK_IMPORT_PATH: /import
+      WERKBANK_BACKUP_PATH: /backups
+      WERKBANK_MIGRATE: "true"
+    ports:
+      - "${WERKBANK_PORT:-8080}:80"
+
+  queue:
+    <<: *werkbank
+    command: php artisan queue:work --sleep=3 --tries=1 --timeout=3600
+    depends_on: [web]
+    healthcheck: { disable: true }
+
+  scheduler:
+    <<: *werkbank
+    command: php artisan schedule:work
+    depends_on: [web]
+    healthcheck: { disable: true }
+
+  db:
+    image: mariadb:11.4
+    profiles: [mariadb]
+    environment:
+      MARIADB_DATABASE: ${DB_DATABASE:-werkbank}
+      MARIADB_USER: ${DB_USERNAME:-werkbank}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?Zet DB_PASSWORD in .env}
+      MARIADB_RANDOM_ROOT_PASSWORD: "yes"
+    volumes:
+      - mariadb:/var/lib/mysql
+    restart: unless-stopped
+
+volumes:
+  database:
+  storage:
+  mariadb:
