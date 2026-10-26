@@ -189,7 +189,7 @@ Werkbank dekt nu de processen die in de Gripp-data aantoonbaar gebruikt worden: 
 | Digitaal akkoord door de klant, klantportaal | Ontbreekt |
 | Documentopmaak gelijk aan de Gripp-sjablonen | Eigen, eenvoudige opmaak |
 | Boekhouding (journaal, bank, btw-aangifte, W&V/balans) | Buiten scope; memoriaal en kosten alleen als archief |
-| UBL/e-factuur, SEPA-bestanden, bankkoppeling | UBL-export (Peppol BIS 3.0-structuur, niet officieel gevalideerd) en SEPA-betaalbestand voor inkoopfacturen beschikbaar; geen Peppol-verzending, geen bankkoppeling of incassobestand |
+| UBL/e-factuur, SEPA-bestanden, bankkoppeling | UBL-export (Peppol BIS 3.0-structuur, niet officieel gevalideerd) en SEPA-betaalbestand voor inkoopfacturen beschikbaar; geen Peppol-verzending, geen bankkoppeling (bouwplan via Ponto: [bankkoppeling-ponto.md](bankkoppeling-ponto.md)) of incassobestand |
 | Agenda-koppeling, sleep-en-zet-planning | Ontbreekt; weekoverzicht met invoer |
 | Nacalculatie in euro's (kostprijs per medewerker) | Ontbreekt; alleen uren |
 | Verlof | Beschikbaar: aanvragen, goedkeuren, saldo en planning; geen ziekteverzuim, feestdagen of meenemen van restsaldo |

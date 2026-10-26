@@ -44,6 +44,7 @@ Open daarna `http://localhost:8080`. Zonder Docker: zie [docs/installatie.md](do
 | Back-ups en herstel | [docs/backup-en-herstel.md](docs/backup-en-herstel.md) |
 | Rollen, rechten en privacy | [docs/beveiliging.md](docs/beveiliging.md) |
 | Licenties van afhankelijkheden | [docs/licenties.md](docs/licenties.md) |
+| Bankkoppeling via Ponto zelf bouwen | [docs/bankkoppeling-ponto.md](docs/bankkoppeling-ponto.md) |
 | Voortgang per fase | [docs/voortgang.md](docs/voortgang.md) |
 
 ## Ontwikkelen
