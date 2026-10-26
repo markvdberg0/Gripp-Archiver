@@ -2,16 +2,31 @@
 
 Deze handleiding beschrijft hoe je Werkbank zelf aan je bankrekening koppelt via [Ponto](https://myponto.com) van Isabel Group. Ponto is een PSD2-dienst die rekeninginformatie (saldo's en transacties) en betaalopdrachten van meerdere banken via één API beschikbaar maakt.
 
-> **Status:** Werkbank heeft **geen ingebouwde Ponto-koppeling**. Deze handleiding is een bouwplan: wat je in Ponto instelt, welke API-aanroepen je nodig hebt en hoe je de gegevens aan facturen in Werkbank koppelt. De API-details komen uit de openbare Ponto-documentatie (geraadpleegd oktober 2026). Controleer ze voordat je bouwt: Ponto kan zijn API, voorwaarden en prijzen wijzigen.
+> **Status:** het **alleen-lezen-deel is ingebouwd** (stap 1 tot en met 5): Werkbank haalt rekeningen en transacties op en stelt per transactie een factuur voor; jij bevestigt en dan wordt de betaling geboekt. Getest met nagebootste Ponto-antwoorden, **nog niet met een echte Ponto-sandbox of bank**. Betalen via Ponto (stap 6) is níet gebouwd; daarvoor blijft deze handleiding een bouwplan. De API-details komen uit de openbare Ponto-documentatie (geraadpleegd oktober 2026); Ponto kan zijn API, voorwaarden en prijzen wijzigen.
+
+## In gebruik nemen (ingebouwde koppeling)
+
+1. Maak in Ponto een custom integration met alleen **AIS** (zie stap 1) en zet client ID en secret in `.env` (stap 2). Voer daarna `php artisan config:cache` uit.
+2. Ga in Werkbank naar **Financieel › Bank** (recht `bank.koppelen`: beheerder en administratie) en klik **Nu ophalen**, of voer `php artisan werkbank:bank-ophalen` uit.
+3. De scheduler haalt daarna elk uur op werkdagen tussen 7 en 19 uur op. Werkbank **leest** alleen wat Ponto al heeft; Ponto werkt het zelf vier keer per dag bij met de bank. Werkbank start nooit zelf een synchronisatie.
+4. Verwerk de transacties onder **Te verwerken**:
+   - **zeker** (kenmerk `WB-<boeknummer>` uit het betaalbestand, of factuurnummer met exact het openstaande bedrag): per stuk of in één keer met **Zekere voorstellen boeken**;
+   - **controleren** (deelbetaling, of alleen dezelfde IBAN en hetzelfde bedrag): kijk na en klik **Boeken**;
+   - geen voorstel: **Andere…** om zelf een verkoopfactuurnummer of inkoopboeknummer te kiezen, of **Negeren** (bankkosten, salaris, belasting).
+5. Boeken registreert een gewone betaling op de factuur (met "Bank (Ponto) …" als omschrijving), werkt het openstaande bedrag bij en schrijft een regel in het logboek. Er wordt nooit meer geboekt dan er openstaat, en elke transactie kan maar één keer worden geboekt.
+
+Op het scherm staan ook het saldo per rekening, wanneer de bank het laatst is bijgewerkt, en een waarschuwing als de toestemming bij de bank binnen twee weken verloopt.
+
+Technisch: `App\Support\Ponto\PontoClient` (token en ophalen), `BankOphalen` (opslaan, herhaalbaar op het Ponto-kenmerk), `Koppelvoorstellen` (regels uit stap 5) en `BankBoeken` (boeken na bevestiging). Tests: `tests/Feature/BankTest.php`.
 
 ## Wat levert het op?
 
 | Doel | Hoe | Nu in Werkbank |
 |---|---|---|
-| Ontvangen betalingen automatisch bij verkoopfacturen boeken | Transacties ophalen (AIS) en koppelen op factuurnummer en bedrag | Handmatig via "Betaling registreren" |
-| Betaalde inkoopfacturen automatisch afvinken | Afschrijvingen koppelen op de betalingskenmerken uit het betaalbestand | Handmatig |
-| Inkoopfacturen betalen zonder bestand te uploaden | Bulkbetaling via Ponto (PIS), ondertekenen in Ponto | SEPA-bestand downloaden en bij de bank inlezen |
-| Actueel banksaldo op het overzicht | Rekeningen ophalen (AIS) | Niet aanwezig |
+| Ontvangen betalingen bij verkoopfacturen boeken | Transacties ophalen (AIS) en koppelen op factuurnummer en bedrag | Ingebouwd: voorstel, boeken na bevestiging |
+| Betaalde inkoopfacturen afvinken | Afschrijvingen koppelen op de betalingskenmerken uit het betaalbestand | Ingebouwd: voorstel, boeken na bevestiging |
+| Inkoopfacturen betalen zonder bestand te uploaden | Bulkbetaling via Ponto (PIS), ondertekenen in Ponto | Niet gebouwd; SEPA-bestand downloaden en bij de bank inlezen |
+| Actueel banksaldo | Rekeningen ophalen (AIS) | Ingebouwd, op het scherm Bank |
 
 Begin met **alleen lezen (AIS)**: dat levert het meeste op, met het minste risico. Betalen via Ponto (PIS) is een aparte, latere stap.
 
@@ -46,7 +61,7 @@ Ponto gebruikt voor custom integrations de OAuth 2 *client credentials*-stroom. 
 
 ## Stap 2 — Gegevens veilig opslaan
 
-Zet de gegevens in `.env` van je Werkbank-server, nooit in git. Werkbank gebruikt deze namen nog nergens; het is een voorstel voor je eigen code:
+Zet de gegevens in `.env` van je Werkbank-server, nooit in git. De ingebouwde koppeling leest deze variabelen (`config/services.php`, sleutel `ponto`):
 
 ```dotenv
 PONTO_CLIENT_ID=
@@ -118,7 +133,7 @@ Een extra synchronisatie (`POST /ponto-connect/synchronizations`) mag volgens de
 
 ## Stap 5 — Transacties aan facturen koppelen
 
-Voorstel voor een eigen tabel, zodat elke banktransactie één keer wordt verwerkt en terug te vinden is:
+De ingebouwde koppeling werkt zo (migratie `2026_10_26_000100_create_bank_tables`; hieronder vereenvoudigd). Bouw je zelf, dan is dit een goed vertrekpunt: elke banktransactie wordt één keer verwerkt en blijft terug te vinden.
 
 ```php
 Schema::create('bank_transactions', function (Blueprint $table) {

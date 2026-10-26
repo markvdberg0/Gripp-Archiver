@@ -1,10 +1,21 @@
 <?php
 
+use App\Http\Controllers\BankController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ContractController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
+
+// Bank (Ponto, alleen lezen): transacties en koppelvoorstellen
+Route::middleware('can:bank.koppelen')->group(function () {
+    Route::get('/bank', [BankController::class, 'index'])->name('bank.index');
+    Route::post('/bank/ophalen', [BankController::class, 'fetch'])->name('bank.ophalen')->middleware('throttle:6,1');
+    Route::post('/bank/zeker-boeken', [BankController::class, 'bookCertain'])->name('bank.zeker');
+    Route::post('/bank/{transactie}/boeken', [BankController::class, 'book'])->name('bank.boeken');
+    Route::post('/bank/{transactie}/negeren', [BankController::class, 'ignore'])->name('bank.negeren');
+    Route::post('/bank/{transactie}/heropenen', [BankController::class, 'reopen'])->name('bank.heropenen');
+});
 
 // Verkoopfacturen en contracten
 Route::middleware('can:facturen.bekijken')->group(function () {

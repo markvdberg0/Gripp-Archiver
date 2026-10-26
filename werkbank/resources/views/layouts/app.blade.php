@@ -31,6 +31,7 @@
             ['contracten.index', 'Contracten', 'facturen.bekijken', 'contracten.*'],
             ['inkoopopdrachten.index', 'Inkoopopdrachten', 'inkoop.bekijken', 'inkoopopdrachten.*'],
             ['inkoopfacturen.index', 'Inkoopfacturen', 'inkoop.bekijken', 'inkoopfacturen.*'],
+            ['bank.index', 'Bank', 'bank.koppelen', 'bank.*'],
             ['rapporten.index', 'Overzichten', 'rapporten.bekijken', 'rapporten.*'],
             ['boekingen.index', 'Memoriaal en kosten', 'rapporten.bekijken', 'boekingen.*'],
         ],

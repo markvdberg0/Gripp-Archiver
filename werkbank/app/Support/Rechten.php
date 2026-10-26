@@ -33,6 +33,7 @@ final class Rechten
         'uren.fiatteren' => 'Uren van anderen bekijken en fiatteren',
         'verlof.aanvragen' => 'Eigen verlof aanvragen',
         'verlof.fiatteren' => 'Verlof van iedereen bekijken en goedkeuren',
+        'bank.koppelen' => 'Banktransacties bekijken en aan facturen koppelen',
         'facturen.bekijken' => 'Verkoopfacturen bekijken',
         'facturen.bewerken' => 'Verkoopfacturen maken, verzenden en betalingen registreren',
         'inkoop.bekijken' => 'Inkoopopdrachten en inkoopfacturen bekijken',
@@ -48,7 +49,7 @@ final class Rechten
     private const MATRIX = [
         'beheerder' => ['*'],
         'administratie' => [
-            'relaties.*', 'producten.*', 'offertes.*', 'opdrachten.*', 'taken.bewerken', 'uren.schrijven', 'uren.fiatteren', 'verlof.*',
+            'relaties.*', 'producten.*', 'offertes.*', 'opdrachten.*', 'taken.bewerken', 'uren.schrijven', 'uren.fiatteren', 'verlof.*', 'bank.koppelen',
             'facturen.*', 'inkoop.*', 'rapporten.bekijken', 'beheer.instellingen', 'beheer.auditlog',
         ],
         'projectleider' => [

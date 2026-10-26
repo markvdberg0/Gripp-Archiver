@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\Payment;
+use App\Models\PurchasePayment;
 use App\Models\User;
 use App\Support\Attachables;
 use App\Support\Rechten;
@@ -34,7 +36,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // Korte, stabiele namen in polymorfe kolommen (bijlagen, labels, logboek).
-        Relation::morphMap(Attachables::morphMap());
+        Relation::morphMap(Attachables::morphMap() + ['payment' => Payment::class, 'purchase_payment' => PurchasePayment::class]);
 
         Model::preventLazyLoading(! $this->app->isProduction());
         Model::preventSilentlyDiscardingAttributes(! $this->app->isProduction());
