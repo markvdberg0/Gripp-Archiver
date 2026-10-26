@@ -119,10 +119,10 @@ final class Sepa
         return match (true) {
             ! in_array($invoice->phase, ['akkoord', 'verwerkt'], true) => 'nog niet goedgekeurd',
             $invoice->on_hold => 'staat on hold',
-            $invoice->payment_method === 'incasso' => 'wordt door de leverancier geïncasseerd',
+            $invoice->payment_method === 'incasso' => 'incasso door leverancier',
             (float) $invoice->total_open <= 0.005 => 'niets open',
             ! $invoice->supplier => 'geen leverancier',
-            ! Iban::valid((string) $invoice->supplier->iban) => 'geen geldig IBAN bij de leverancier',
+            ! Iban::valid((string) $invoice->supplier->iban) => 'geen geldig IBAN',
             default => null,
         };
     }
